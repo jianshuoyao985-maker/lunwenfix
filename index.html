@@ -137,7 +137,64 @@
       font-size: 12px;
       line-height: 1.6;
     }
+    .inline-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .advanced-panel {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfdfe;
+      padding: 10px 12px 12px;
+    }
+    .advanced-panel summary {
+      cursor: pointer;
+      color: var(--ink);
       font-size: 14px;
+      font-weight: 700;
+      list-style-position: outside;
+    }
+    .template-settings {
+      display: grid;
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .setting-row {
+      display: grid;
+      gap: 8px;
+      padding: 10px;
+      border: 1px solid #e7edf2;
+      border-radius: 8px;
+      background: #fff;
+    }
+    .setting-title {
+      color: var(--ink);
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .setting-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+    .mini-field {
+      display: grid;
+      gap: 5px;
+    }
+    .mini-field label, .checkbox-field {
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .mini-field select {
+      min-height: 34px;
+      padding: 0 8px;
+      font-size: 13px;
+    }
+    .checkbox-field {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
     }
     .summary {
       display: grid;
@@ -223,6 +280,42 @@
             <option value="32">三号</option>
           </select>
         </div>
+        <div class="inline-grid">
+          <div class="field">
+            <label for="bodyLine">正文行距</label>
+            <select id="bodyLine">
+              <option value="400|exact" selected>固定 20 磅</option>
+              <option value="360|auto">1.5 倍</option>
+              <option value="240|auto">单倍</option>
+              <option value="360|exact">固定 18 磅</option>
+              <option value="440|exact">固定 22 磅</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="bodyIndent">正文首行缩进</label>
+            <select id="bodyIndent">
+              <option value="0">不缩进</option>
+              <option value="210">1 字符</option>
+              <option value="420" selected>2 字符</option>
+              <option value="630">3 字符</option>
+              <option value="840">4 字符</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label for="bodyAlign">正文对齐</label>
+          <select id="bodyAlign">
+            <option value="both" selected>两端对齐</option>
+            <option value="left">左对齐</option>
+            <option value="center">居中</option>
+            <option value="right">右对齐</option>
+          </select>
+        </div>
+        <details class="advanced-panel">
+          <summary>高级格式设置</summary>
+          <div id="templateSettings" class="template-settings"></div>
+          <div class="help">这里可以单独调整封面、标题、摘要、关键词、图表题注、参考文献、附录等模板项；下方自定义文字要求会优先覆盖这些选项。</div>
+        </details>
         <div class="field">
           <label for="customRules">自定义论文格式要求（可选）</label>
           <textarea id="customRules" placeholder="不填写则使用默认规范。示例：正文仿宋五号，1.5倍行距，首行缩进2字符；一级标题黑体三号居中；参考文献宋体五号。"></textarea>
@@ -259,9 +352,41 @@
     const drop = document.getElementById("drop");
     const bodyFont = document.getElementById("bodyFont");
     const bodySize = document.getElementById("bodySize");
+    const bodyLine = document.getElementById("bodyLine");
+    const bodyIndent = document.getElementById("bodyIndent");
+    const bodyAlign = document.getElementById("bodyAlign");
     const customRules = document.getElementById("customRules");
+    const templateSettings = document.getElementById("templateSettings");
     let selectedFile = null;
     const state = { paras: 0, heads: 0, caps: 0, refs: 0 };
+
+    const FONT_OPTIONS = ["宋体", "仿宋", "黑体", "楷体", "微软雅黑", "隶书", "华文中宋", "Times New Roman", "Arial"];
+    const SIZE_OPTIONS = [
+      [18, "小五"], [21, "五号"], [24, "小四"], [28, "四号"],
+      [30, "小三"], [32, "三号"], [36, "小二"], [44, "二号"]
+    ];
+    const LINE_OPTIONS = [
+      ["", "保持模板默认"], ["240|auto", "单倍"], ["360|auto", "1.5 倍"],
+      ["400|exact", "固定 20 磅"], ["360|exact", "固定 18 磅"],
+      ["440|exact", "固定 22 磅"], ["480|exact", "固定 24 磅"]
+    ];
+    const INDENT_OPTIONS = [["", "保持默认"], ["0", "不缩进"], ["210", "1 字符"], ["420", "2 字符"], ["630", "3 字符"], ["840", "4 字符"]];
+    const ALIGN_OPTIONS = [["", "保持模板默认"], ["both", "两端对齐"], ["left", "左对齐"], ["center", "居中"], ["right", "右对齐"]];
+    const FORMAT_GROUPS = [
+      { label: "封面大标题", types: ["coverMain"], defaults: { eastAsia: "黑体", size: 32, bold: true, align: "center", line: "480|exact", firstLine: "0" } },
+      { label: "封面中文题目", types: ["coverTitleCn"], defaults: { eastAsia: "黑体", size: 30, bold: true, align: "left", firstLine: "0" } },
+      { label: "封面英文题目", types: ["coverTitleEn"], defaults: { eastAsia: "Times New Roman", size: 28, bold: false, align: "left", firstLine: "0" } },
+      { label: "封面字段", types: ["coverField"], defaults: { eastAsia: "宋体", size: 28, bold: false, align: "left", firstLine: "0" } },
+      { label: "摘要标题", types: ["abstractTitle", "abstractTitleEn"], defaults: { eastAsia: "黑体", size: 32, bold: true, align: "center", line: "240|auto", firstLine: "0" } },
+      { label: "英文摘要正文", types: ["abstractBodyEn"], defaults: { eastAsia: "Times New Roman", size: 28, bold: false, align: "both", firstLine: "420" } },
+      { label: "关键词", types: ["keywords", "keywordsEn"], defaults: { eastAsia: "宋体", size: 24, bold: false, align: "left", firstLine: "0" } },
+      { label: "一级标题", types: ["heading1"], defaults: { eastAsia: "黑体", size: 32, bold: true, align: "center", firstLine: "0" } },
+      { label: "二级标题", types: ["heading2"], defaults: { eastAsia: "黑体", size: 28, bold: true, align: "left", firstLine: "0" } },
+      { label: "三级标题", types: ["heading3"], defaults: { eastAsia: "黑体", size: 24, bold: true, align: "left", firstLine: "0" } },
+      { label: "图表题注", types: ["caption"], defaults: { eastAsia: "宋体", size: 21, bold: false, align: "center", line: "360|auto", firstLine: "0" } },
+      { label: "参考文献", types: ["reference"], defaults: { eastAsia: "宋体", size: 21, bold: false, align: "left", line: "360|auto", firstLine: "0" } },
+      { label: "附录", types: ["appendix"], defaults: { eastAsia: "仿宋", size: 21, bold: false, align: "both", line: "360|auto", firstLine: "420" } }
+    ];
 
     function syncMetrics() {
       document.getElementById("mParas").textContent = state.paras;
@@ -282,6 +407,80 @@
       Object.keys(state).forEach(key => state[key] = 0);
       syncMetrics();
     }
+
+    function escapeHtml(text) {
+      return String(text).replace(/[&<>"]/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" }[ch]));
+    }
+
+    function optionList(options, selected) {
+      return options.map(item => {
+        const value = Array.isArray(item) ? item[0] : item;
+        const label = Array.isArray(item) ? item[1] : item;
+        const isSelected = String(value) === String(selected) ? " selected" : "";
+        return "<option value=\"" + escapeHtml(value) + "\"" + isSelected + ">" + escapeHtml(label) + "</option>";
+      }).join("");
+    }
+
+    function renderTemplateSettings() {
+      templateSettings.innerHTML = FORMAT_GROUPS.map((group, index) => {
+        const defaults = group.defaults;
+        const id = "fmt" + index;
+        return "<div class=\"setting-row\">" +
+          "<div class=\"setting-title\">" + escapeHtml(group.label) + "</div>" +
+          "<div class=\"setting-grid\">" +
+          "<div class=\"mini-field\"><label for=\"" + id + "Font\">字体</label><select id=\"" + id + "Font\">" + optionList(FONT_OPTIONS, defaults.eastAsia) + "</select></div>" +
+          "<div class=\"mini-field\"><label for=\"" + id + "Size\">字号</label><select id=\"" + id + "Size\">" + optionList(SIZE_OPTIONS, defaults.size) + "</select></div>" +
+          "<div class=\"mini-field\"><label for=\"" + id + "Line\">行距</label><select id=\"" + id + "Line\">" + optionList(LINE_OPTIONS, defaults.line || "") + "</select></div>" +
+          "<div class=\"mini-field\"><label for=\"" + id + "Indent\">首行缩进</label><select id=\"" + id + "Indent\">" + optionList(INDENT_OPTIONS, defaults.firstLine || "") + "</select></div>" +
+          "<div class=\"mini-field\"><label for=\"" + id + "Align\">对齐方式</label><select id=\"" + id + "Align\">" + optionList(ALIGN_OPTIONS, defaults.align || "") + "</select></div>" +
+          "<label class=\"checkbox-field\"><input id=\"" + id + "Bold\" type=\"checkbox\" " + (defaults.bold ? "checked" : "") + "> 加粗</label>" +
+          "</div></div>";
+      }).join("");
+    }
+
+    function parseLineOption(value) {
+      if (!value) return {};
+      const parts = value.split("|");
+      return { line: Number(parts[0]), lineRule: parts[1] || "auto" };
+    }
+
+    function getSelectText(select) {
+      return select.options[select.selectedIndex] ? select.options[select.selectedIndex].text : select.value;
+    }
+
+    function getTemplateOverrides() {
+      const overrides = {};
+      FORMAT_GROUPS.forEach((group, index) => {
+        const id = "fmt" + index;
+        const font = document.getElementById(id + "Font").value;
+        const style = {
+          eastAsia: font,
+          size: Number(document.getElementById(id + "Size").value),
+          align: document.getElementById(id + "Align").value || undefined,
+          bold: document.getElementById(id + "Bold").checked
+        };
+        if (/^[A-Za-z ]+$/.test(font)) style.ascii = font;
+        Object.assign(style, parseLineOption(document.getElementById(id + "Line").value));
+        const indent = document.getElementById(id + "Indent").value;
+        if (indent !== "") style.firstLine = Number(indent);
+        group.types.forEach(type => {
+          overrides[type] = mergeStyle(overrides[type], style);
+        });
+      });
+      return overrides;
+    }
+
+    function mergeOverrideMaps() {
+      const result = {};
+      Array.from(arguments).forEach(map => {
+        Object.keys(map || {}).forEach(type => {
+          result[type] = mergeStyle(result[type], map[type]);
+        });
+      });
+      return result;
+    }
+
+    renderTemplateSettings();
 
     function pickFile(file) {
       selectedFile = file;
@@ -345,7 +544,11 @@
       setFonts(rPr, opt.eastAsia || "宋体", opt.ascii || "Times New Roman");
       setVal(rPr, "sz", opt.size || 24);
       setVal(rPr, "szCs", opt.size || 24);
-      if (opt.bold) ensure(rPr, "b");
+      if (opt.bold === true) ensure(rPr, "b");
+      if (opt.bold === false) {
+        const b = directChild(rPr, "b");
+        if (b) rPr.removeChild(b);
+      }
       if (opt.italic) ensure(rPr, "i");
     }
     function setParaStyle(p, opt) {
@@ -486,7 +689,7 @@
 
     function applyByType(p, type, userOpt) {
       if (type === "blank") return;
-      const body = { eastAsia: userOpt.bodyFont, size: userOpt.bodySize, align: "both", line: 400, lineRule: "exact", firstLine: 420, before: 0, after: 0 };
+      const body = { eastAsia: userOpt.bodyFont, size: userOpt.bodySize, align: userOpt.bodyAlign, line: userOpt.bodyLine, lineRule: userOpt.bodyLineRule, firstLine: userOpt.bodyFirstLine, before: 0, after: 0 };
       const styles = {
         coverMain: { eastAsia: "黑体", size: 32, bold: true, align: "center", line: 480, firstLine: 0, after: 240 },
         coverTitleCn: { eastAsia: "黑体", size: 30, bold: true, align: "left", firstLine: 0 },
@@ -546,10 +749,15 @@
       runBtn.disabled = true;
       try {
         const custom = parseCustomRequirements(customRules.value);
+        const bodyLineOpt = parseLineOption(bodyLine.value);
         const userOpt = {
           bodyFont: bodyFont.value,
           bodySize: Number(bodySize.value),
-          overrides: custom.overrides
+          bodyAlign: bodyAlign.value,
+          bodyLine: bodyLineOpt.line || 400,
+          bodyLineRule: bodyLineOpt.lineRule || "exact",
+          bodyFirstLine: Number(bodyIndent.value),
+          overrides: mergeOverrideMaps(getTemplateOverrides(), custom.overrides)
         };
         const zip = await JSZip.loadAsync(await selectedFile.arrayBuffer());
         const docFile = zip.file("word/document.xml");
@@ -573,7 +781,8 @@
         await markTocDirty(zip);
         syncMetrics();
         log("已应用页面边距、标题、摘要、题注、参考文献和附录格式。");
-        log("正文使用：" + userOpt.bodyFont + " / " + bodySize.options[bodySize.selectedIndex].text + "。");
+        log("正文使用：" + userOpt.bodyFont + " / " + getSelectText(bodySize) + " / " + getSelectText(bodyLine) + " / 首行缩进" + getSelectText(bodyIndent) + "。");
+        log("高级格式设置已应用：" + FORMAT_GROUPS.length + " 类模板项。自定义文本要求会作为最后覆盖规则。");
         if (custom.notes.length) {
           log("已识别自定义要求：" + custom.notes.join("；"));
         } else if (customRules.value.trim()) {
