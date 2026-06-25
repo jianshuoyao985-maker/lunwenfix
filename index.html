@@ -318,8 +318,8 @@
         </details>
         <div class="field">
           <label for="customRules">自定义论文格式要求（可选）</label>
-          <textarea id="customRules" placeholder="不填写则使用默认规范。示例：正文仿宋五号，1.5倍行距，首行缩进2字符；一级标题黑体三号居中；参考文献宋体五号。"></textarea>
-          <div class="help">支持识别常见要求：字体、字号、行距、首行缩进、居中/左对齐，以及正文、一级标题、二级标题、摘要、关键词、图表题注、参考文献、附录等对象。</div>
+          <textarea id="customRules" placeholder="像聊天一样描述即可，不用逐条填写。例：我想把正文改成宋体小四，行距20磅，首行缩进2字符；一级标题黑体三号居中加粗；参考文献用五号宋体。"></textarea>
+          <div class="help">可以输入一整段话。系统会自动寻找“正文、标题、摘要、关键词、图表题注、参考文献、附录、封面”等对象，并识别附近的字体、字号、行距、缩进、对齐、加粗要求。</div>
         </div>
         <button id="run" disabled>开始整理</button>
         <a id="download" class="download" download>下载整理后的 Word</a>
@@ -599,9 +599,29 @@
       return (text || "").replace(/\s+/g, "").toLowerCase();
     }
 
+    function uniqueTypes(types) {
+      return Array.from(new Set(types));
+    }
+
+    function parseChineseNumber(text) {
+      if (text === undefined || text === null || text === "") return undefined;
+      const raw = String(text).replace(/两/g, "二");
+      if (/^\d+(?:\.\d+)?$/.test(raw)) return Number(raw);
+      const map = { 零: 0, 一: 1, 二: 2, 三: 3, 四: 4, 五: 5, 六: 6, 七: 7, 八: 8, 九: 9, 十: 10 };
+      if (raw === "十") return 10;
+      if (raw.includes("十")) {
+        const parts = raw.split("十");
+        const tens = parts[0] ? map[parts[0]] : 1;
+        const ones = parts[1] ? map[parts[1]] : 0;
+        return tens * 10 + ones;
+      }
+      return map[raw];
+    }
+
     function parseFont(text) {
-      const fonts = ["微软雅黑", "Times New Roman", "宋体", "仿宋", "黑体", "楷体", "隶书", "华文中宋"];
-      return fonts.find(font => text.includes(font.toLowerCase()) || text.includes(font));
+      const lower = (text || "").toLowerCase();
+      const fonts = ["Microsoft YaHei", "微软雅黑", "Times New Roman", "Arial", "宋体", "仿宋", "黑体", "楷体", "隶书", "华文中宋"];
+      return fonts.find(font => lower.includes(font.toLowerCase()));
     }
 
     function parseSize(text) {
@@ -611,14 +631,19 @@
       ];
       const named = sizes.find(([name]) => text.includes(name));
       if (named) return named[1];
-      const match = text.match(/(\d+(?:\.\d+)?)\s*(?:磅|pt|point)/i);
-      return match ? Math.round(Number(match[1]) * 2) : undefined;
+      const isLineOnly = /(行距|行间距|固定值?)/.test(text) && !/(字号|字体大小|文字大小|字的大小)/.test(text);
+      const pt = isLineOnly ? null : text.match(/(\d+(?:\.\d+)?)\s*(?:磅|pt|point)/i);
+      if (pt) return Math.round(Number(pt[1]) * 2);
+      const numbered = text.match(/(?:字号|字体大小|大小|用|改成|设为|设置为)?\s*(\d+(?:\.\d+)?)\s*(?:号字|号)/);
+      return numbered ? Math.round(Number(numbered[1]) * 2) : undefined;
     }
 
     function parseLine(text) {
-      const fixed = text.match(/(?:固定值?|行距)\s*(\d+(?:\.\d+)?)\s*(?:磅|pt)/i);
+      const fixedA = text.match(/(?:固定值?|行距|行间距)\s*(?:为|是|设为|设置为|改成|调整为)?\s*(\d+(?:\.\d+)?)\s*(?:磅|pt)/i);
+      const fixedB = text.match(/(\d+(?:\.\d+)?)\s*(?:磅|pt)\s*(?:行距|行间距)/i);
+      const fixed = fixedA || fixedB;
       if (fixed) return { line: Math.round(Number(fixed[1]) * 20), lineRule: "exact" };
-      const multiple = text.match(/(\d+(?:\.\d+)?)\s*倍(?:行距)?/);
+      const multiple = text.match(/(\d+(?:\.\d+)?)\s*倍(?:行距|行间距)?/);
       if (multiple) return { line: Math.round(Number(multiple[1]) * 240), lineRule: "auto" };
       if (text.includes("单倍")) return { line: 240, lineRule: "auto" };
       if (text.includes("1.5倍") || text.includes("一倍半")) return { line: 360, lineRule: "auto" };
@@ -626,64 +651,138 @@
     }
 
     function parseIndent(text) {
-      if (text.includes("不缩进") || text.includes("无缩进")) return { firstLine: 0 };
-      const match = text.match(/首行缩进\s*(\d+(?:\.\d+)?)\s*字符/);
-      if (match) return { firstLine: Math.round(Number(match[1]) * 210) };
-      return {};
+      if (text.includes("不缩进") || text.includes("无缩进") || text.includes("取消缩进")) return { firstLine: 0 };
+      const match = text.match(/首行缩进\s*(?:为|是|设为|设置为|改成|调整为)?\s*([\d.一二两三四五六七八九十]+)\s*(?:个)?(?:字符|字)/)
+        || text.match(/首行\s*(?:为|是|设为|设置为|改成|调整为)?\s*([\d.一二两三四五六七八九十]+)\s*(?:个)?(?:字符|字)/);
+      const loose = text.match(/缩进\s*([\d.一二两三四五六七八九十]+)\s*(?:个)?(?:字符|字)/);
+      const hit = match || loose;
+      if (!hit) return {};
+      const value = parseChineseNumber(hit[1]);
+      return value !== undefined ? { firstLine: Math.round(value * 210) } : {};
     }
 
     function parseAlign(text) {
-      if (text.includes("居中")) return { align: "center" };
-      if (text.includes("右对齐")) return { align: "right" };
-      if (text.includes("左对齐")) return { align: "left" };
-      if (text.includes("两端对齐")) return { align: "both" };
+      if (text.includes("两端对齐") || text.includes("两边对齐")) return { align: "both" };
+      if (text.includes("右对齐") || text.includes("靠右")) return { align: "right" };
+      if (text.includes("左对齐") || text.includes("靠左")) return { align: "left" };
+      if (text.includes("居中") || text.includes("居中对齐") || text.includes("置中")) return { align: "center" };
       return {};
     }
 
+    function parseStyleFromText(text) {
+      const style = {};
+      const font = parseFont(text);
+      const size = parseSize(text);
+      if (font) style.eastAsia = font;
+      if (font && /^[A-Za-z ]+$/.test(font)) style.ascii = font;
+      if (size) style.size = size;
+      Object.assign(style, parseLine(text), parseIndent(text), parseAlign(text));
+      if (/不(?:要|用)?加粗|取消加粗|不要粗体|不粗/.test(text)) style.bold = false;
+      else if (text.includes("加粗") || text.includes("粗体")) style.bold = true;
+      return style;
+    }
+
+    const TARGET_PATTERNS = [
+      { types: ["abstractTitle", "abstractTitleEn"], patterns: ["摘要标题", "中英文摘要标题"] },
+      { types: ["abstractBodyEn"], patterns: ["英文摘要正文", "英文摘要", "abstract"] },
+      { types: ["keywords", "keywordsEn"], patterns: ["关键词", "关键字", "keywords"] },
+      { types: ["reference"], patterns: ["参考文献", "文献列表", "引用文献"] },
+      { types: ["appendix"], patterns: ["附录", "附件"] },
+      { types: ["caption"], patterns: ["图表题注", "图表", "题注", "图题", "表题", "图片标题", "表格标题"] },
+      { types: ["coverMain", "coverTitleCn", "coverTitleEn", "coverField"], patterns: ["封面", "封皮"] },
+      { types: ["heading1"], patterns: ["一级标题", "1级标题", "一标题", "章标题", "大标题"] },
+      { types: ["heading2"], patterns: ["二级标题", "2级标题", "二标题", "节标题"] },
+      { types: ["heading3"], patterns: ["三级标题", "3级标题", "三标题", "小标题"] },
+      { types: ["heading1", "heading2", "heading3"], patterns: ["各级标题", "所有标题", "全部标题", "标题"] },
+      { types: ["body", "abstractBodyEn"], patterns: ["摘要正文", "摘要"] },
+      { types: ["body"], patterns: ["正文", "正文部分", "主体", "普通段落", "段落"] },
+      { types: ["body"], patterns: ["全文", "全篇", "整篇论文", "整篇", "通篇"] }
+    ];
+
+    function findTargetMatches(text) {
+      const lower = (text || "").toLowerCase();
+      const matches = [];
+      TARGET_PATTERNS.forEach(rule => {
+        rule.patterns.forEach(pattern => {
+          const needle = pattern.toLowerCase();
+          let index = lower.indexOf(needle);
+          while (index !== -1) {
+            matches.push({ index, end: index + pattern.length, types: rule.types, label: pattern });
+            index = lower.indexOf(needle, index + Math.max(needle.length, 1));
+          }
+        });
+      });
+      const sorted = matches.sort((a, b) => a.index - b.index || (b.end - b.index) - (a.end - a.index));
+      return sorted.filter((match, index) => {
+        return !sorted.slice(0, index).some(prev => match.index < prev.end && prev.index < match.end);
+      });
+    }
+
     function parseTargetTypes(text) {
-      if (text.includes("一级标题") || text.includes("1级标题") || text.includes("一标题")) return ["heading1"];
-      if (text.includes("二级标题") || text.includes("2级标题") || text.includes("二标题")) return ["heading2"];
-      if (text.includes("三级标题") || text.includes("3级标题") || text.includes("三标题")) return ["heading3"];
-      if (text.includes("标题")) return ["heading1", "heading2", "heading3"];
-      if (text.includes("关键词") || text.includes("关键字")) return ["keywords", "keywordsEn"];
-      if (text.includes("摘要标题")) return ["abstractTitle", "abstractTitleEn"];
-      if (text.includes("英文摘要")) return ["abstractBodyEn"];
-      if (text.includes("摘要")) return ["body", "abstractBodyEn"];
-      if (text.includes("参考文献")) return ["reference"];
-      if (text.includes("附录")) return ["appendix"];
-      if (text.includes("图表") || text.includes("题注") || text.includes("图题") || text.includes("表题")) return ["caption"];
-      if (text.includes("封面")) return ["coverMain", "coverTitleCn", "coverTitleEn", "coverField"];
-      if (text.includes("正文")) return ["body"];
-      return ["body"];
+      return uniqueTypes(findTargetMatches(text).flatMap(match => match.types));
+    }
+
+    function splitFreeText(text) {
+      const parts = [];
+      (text || "")
+        .split(/[;；。！？!?\n\r]+/)
+        .map(item => item.trim())
+        .filter(Boolean)
+        .forEach(sentence => {
+          sentence.split(/[,，]+/).map(item => item.trim()).filter(Boolean).forEach(clause => {
+            const matches = findTargetMatches(clause);
+            if (matches.length <= 1) {
+              parts.push(clause);
+              return;
+            }
+            matches.forEach((match, index) => {
+              const next = matches[index + 1];
+              const piece = clause.slice(match.index, next ? next.index : clause.length).trim();
+              if (piece) parts.push(piece);
+            });
+          });
+        });
+      return parts;
+    }
+
+    function styleSummary(style) {
+      const items = [];
+      if (style.eastAsia) items.push(style.eastAsia);
+      if (style.size) items.push("字号" + style.size / 2 + "磅");
+      if (style.line) items.push((style.lineRule === "exact" ? "固定" + style.line / 20 + "磅" : style.line / 240 + "倍") + "行距");
+      if (style.firstLine !== undefined) items.push("首行缩进" + style.firstLine / 210 + "字符");
+      if (style.align) items.push({ both: "两端对齐", left: "左对齐", center: "居中", right: "右对齐" }[style.align] || style.align);
+      if (style.bold === true) items.push("加粗");
+      if (style.bold === false) items.push("不加粗");
+      return items.join("、");
+    }
+
+    function targetSummary(types) {
+      const names = {
+        body: "正文", heading1: "一级标题", heading2: "二级标题", heading3: "三级标题",
+        abstractTitle: "摘要标题", abstractTitleEn: "英文摘要标题", abstractBodyEn: "英文摘要正文",
+        keywords: "关键词", keywordsEn: "英文关键词", caption: "图表题注", reference: "参考文献", appendix: "附录",
+        coverMain: "封面大标题", coverTitleCn: "封面中文题目", coverTitleEn: "封面英文题目", coverField: "封面字段"
+      };
+      return types.map(type => names[type] || type).join("、");
     }
 
     function parseCustomRequirements(text) {
       const overrides = {};
       const notes = [];
-      const chunks = (text || "")
-        .split(/[;；。.\n\r]+/)
-        .map(item => item.trim())
-        .filter(Boolean);
-
-      chunks.forEach(raw => {
-        const normalized = normalizeText(raw);
-        const style = {};
-        const font = parseFont(raw);
-        const size = parseSize(raw);
-        if (font) style.eastAsia = font;
-        if (font && /^[A-Za-z ]+$/.test(font)) style.ascii = font;
-        if (size) style.size = size;
-        Object.assign(style, parseLine(raw), parseIndent(raw), parseAlign(raw));
-        if (raw.includes("加粗") || raw.includes("粗体")) style.bold = true;
-
-        if (!Object.keys(style).length) return;
-        const targets = parseTargetTypes(normalized);
+      let lastTargets = [];
+      splitFreeText(text).forEach(raw => {
+        const style = parseStyleFromText(raw);
+        const hasStyle = Object.keys(style).length > 0;
+        const explicitTargets = parseTargetTypes(raw);
+        if (explicitTargets.length) lastTargets = explicitTargets;
+        const targets = explicitTargets.length ? explicitTargets : lastTargets.length ? lastTargets : ["body"];
+        if (!hasStyle) return;
         targets.forEach(type => {
           overrides[type] = mergeStyle(overrides[type], style);
         });
-        notes.push(raw);
+        notes.push(targetSummary(targets) + "：" + styleSummary(style));
       });
-
       return { overrides, notes };
     }
 
@@ -786,7 +885,7 @@
         if (custom.notes.length) {
           log("已识别自定义要求：" + custom.notes.join("；"));
         } else if (customRules.value.trim()) {
-          log("未识别到可自动套用的自定义格式词，已按默认规范处理。建议写法：正文宋体小四，行距20磅。");
+          log("未识别到可自动套用的格式词，已按默认规范处理。可以直接写：我想让正文宋体小四，标题居中加粗，参考文献五号。");
         }
         const blob = await zip.generateAsync({ type: "blob", mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
         const url = URL.createObjectURL(blob);
