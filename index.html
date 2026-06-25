@@ -7,261 +7,331 @@
   <script src="./jszip.min.js"></script>
   <style>
     :root {
-      --bg: #f6f8fa;
-      --panel: #ffffff;
-      --ink: #17202a;
-      --muted: #5f6f7f;
-      --line: #dbe3ea;
-      --green: #006b5f;
-      --red: #b5452d;
-      --blue: #1f5f99;
-      --soft: #eef5f3;
+      --bg: #f5f5f7;
+      --surface: #fbfbfd;
+      --ink: #1d1d1f;
+      --muted: #86868b;
+      --line: rgba(29, 29, 31, .12);
+      --line-strong: rgba(29, 29, 31, .2);
+      --accent: #1d1d1f;
+      --accent-soft: rgba(29, 29, 31, .06);
+      --warning-bg: rgba(245, 245, 247, .72);
     }
     * { box-sizing: border-box; }
+    html { background: var(--bg); }
     body {
       margin: 0;
       background: var(--bg);
       color: var(--ink);
-      font-family: "Microsoft YaHei", "Segoe UI", Arial, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", "Microsoft YaHei", Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
     }
     main {
+      width: min(1320px, calc(100vw - 48px));
       min-height: 100vh;
+      margin: 0 auto;
+      padding: 72px 0 80px;
       display: grid;
-      grid-template-columns: minmax(300px, 390px) 1fr;
+      grid-template-columns: minmax(320px, 430px) minmax(0, 1fr);
+      gap: clamp(56px, 7vw, 112px);
     }
     aside {
-      background: var(--panel);
-      border-right: 1px solid var(--line);
-      padding: 30px;
       display: flex;
       flex-direction: column;
-      gap: 18px;
+      gap: 34px;
     }
     section {
-      padding: 30px;
       display: grid;
-      grid-template-rows: auto 1fr;
-      gap: 18px;
+      align-content: start;
+      gap: 42px;
+      padding-top: 8px;
     }
     h1 {
       margin: 0;
-      font-size: 26px;
-      line-height: 1.25;
+      max-width: 11em;
+      color: var(--ink);
+      font-size: clamp(44px, 5vw, 76px);
+      font-weight: 700;
+      line-height: .98;
       letter-spacing: 0;
     }
     h2 {
-      margin: 0 0 12px;
-      font-size: 17px;
+      margin: 0 0 18px;
+      color: var(--ink);
+      font-size: 22px;
+      font-weight: 650;
+      line-height: 1.2;
+      letter-spacing: 0;
     }
     p {
       margin: 0;
       color: var(--muted);
       line-height: 1.7;
-      font-size: 14px;
-    }
-    .drop {
-      border: 1.5px dashed #9cafbc;
-      border-radius: 8px;
-      background: #fbfdfe;
-      min-height: 150px;
-      display: grid;
-      place-items: center;
-      text-align: center;
-      padding: 22px;
-      transition: border-color .18s, background .18s;
-    }
-    .drop.is-over {
-      border-color: var(--green);
-      background: var(--soft);
-    }
-    input[type=file] { display: none; }
-    .file-btn, button, .download {
-      border: 0;
-      border-radius: 7px;
-      min-height: 42px;
-      padding: 0 16px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      color: #fff;
-      font-size: 14px;
-      font-weight: 700;
-      text-decoration: none;
-      cursor: pointer;
-      user-select: none;
-    }
-    .file-btn { background: var(--green); }
-    button { background: var(--red); width: 100%; }
-    button:disabled { cursor: not-allowed; opacity: .52; }
-    .download { display: none; background: var(--blue); width: 100%; }
-    .download.is-ready { display: flex; }
-    .file-name {
-      color: var(--ink);
-      font-weight: 700;
-      overflow-wrap: anywhere;
-      margin-top: 12px;
+      font-size: 15px;
+      font-weight: 400;
     }
     .version {
       display: inline-flex;
       align-items: center;
       width: fit-content;
-      margin-top: 10px;
-      padding: 5px 9px;
-      border-radius: 999px;
-      background: var(--soft);
-      color: var(--green);
+      margin-top: 18px;
+      padding: 6px 10px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: rgba(255, 255, 255, .42);
+      color: var(--muted);
       font-size: 12px;
-      font-weight: 700;
+      font-weight: 500;
+      letter-spacing: 0;
     }
-    .format-panel {
-      padding: 12px;
-      border: 1px solid #b9d7d0;
+    .drop {
+      min-height: 172px;
+      display: grid;
+      place-items: center;
+      padding: 28px;
+      border: 1px solid var(--line-strong);
       border-radius: 8px;
-      background: #f3faf8;
+      background: rgba(255, 255, 255, .38);
+      text-align: center;
+      transition: border-color .18s ease, background .18s ease;
     }
-    .format-panel label {
-      color: var(--green);
-      font-weight: 700;
+    .drop.is-over {
+      border-color: var(--ink);
+      background: rgba(255, 255, 255, .72);
+    }
+    input[type=file] { display: none; }
+    .file-btn, button, .download {
+      min-height: 44px;
+      padding: 0 18px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--accent);
+      border-radius: 6px;
+      background: var(--accent);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 600;
+      line-height: 1;
+      text-decoration: none;
+      cursor: pointer;
+      user-select: none;
+      transition: opacity .16s ease, background .16s ease, color .16s ease;
+    }
+    .file-btn { min-width: 136px; }
+    button { width: 100%; }
+    button:disabled {
+      cursor: not-allowed;
+      opacity: .32;
+    }
+    .download {
+      display: none;
+      width: 100%;
+      background: transparent;
+      color: var(--accent);
+    }
+    .download.is-ready { display: flex; }
+    .file-name {
+      margin-top: 16px;
+      color: var(--ink);
+      font-size: 14px;
+      font-weight: 500;
+      overflow-wrap: anywhere;
     }
     .controls {
       display: grid;
-      gap: 12px;
+      gap: 26px;
     }
     .field {
       display: grid;
-      gap: 7px;
+      gap: 9px;
     }
     label {
-      font-size: 13px;
       color: var(--muted);
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0;
     }
     select, textarea {
       width: 100%;
-      border-radius: 7px;
       border: 1px solid var(--line);
-      background: #fff;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, .48);
       color: var(--ink);
-      font-size: 14px;
+      font-size: 15px;
+      font-weight: 400;
+      outline: none;
+      transition: border-color .16s ease, background .16s ease;
+    }
+    select:focus, textarea:focus {
+      border-color: var(--ink);
+      background: rgba(255, 255, 255, .78);
     }
     select {
-      min-height: 40px;
-      padding: 0 10px;
+      min-height: 44px;
+      padding: 0 12px;
     }
     textarea {
-      min-height: 112px;
-      padding: 10px;
+      min-height: 146px;
+      padding: 14px;
       resize: vertical;
-      line-height: 1.6;
-      font-family: "Microsoft YaHei", "Segoe UI", Arial, sans-serif;
+      line-height: 1.65;
+      font-family: inherit;
     }
     .help {
       color: var(--muted);
       font-size: 12px;
-      line-height: 1.6;
+      line-height: 1.7;
+      font-weight: 400;
     }
     .inline-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 10px;
+      gap: 14px;
+    }
+    .format-panel {
+      padding: 0 0 26px;
+      border: 0;
+      border-bottom: 1px solid var(--line);
+      border-radius: 0;
+      background: transparent;
+    }
+    .format-panel label {
+      color: var(--ink);
+      font-size: 13px;
+      font-weight: 650;
     }
     .advanced-panel {
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      background: #fbfdfe;
-      padding: 10px 12px 12px;
+      padding: 24px 0 0;
+      border: 0;
+      border-top: 1px solid var(--line);
+      border-radius: 0;
+      background: transparent;
     }
     .advanced-panel summary {
       cursor: pointer;
       color: var(--ink);
-      font-size: 14px;
-      font-weight: 700;
+      font-size: 15px;
+      font-weight: 650;
       list-style-position: outside;
     }
     .template-settings {
       display: grid;
-      gap: 10px;
-      margin-top: 12px;
+      gap: 0;
+      margin-top: 18px;
+      border-top: 1px solid var(--line);
     }
     .setting-row {
       display: grid;
-      gap: 8px;
-      padding: 10px;
-      border: 1px solid #e7edf2;
-      border-radius: 8px;
-      background: #fff;
+      gap: 14px;
+      padding: 18px 0;
+      border: 0;
+      border-bottom: 1px solid var(--line);
+      border-radius: 0;
+      background: transparent;
     }
     .setting-title {
       color: var(--ink);
       font-size: 13px;
-      font-weight: 700;
+      font-weight: 650;
     }
     .setting-grid {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 8px;
+      gap: 12px;
     }
     .mini-field {
       display: grid;
-      gap: 5px;
+      gap: 6px;
     }
     .mini-field label, .checkbox-field {
       color: var(--muted);
       font-size: 12px;
+      font-weight: 400;
     }
     .mini-field select {
-      min-height: 34px;
-      padding: 0 8px;
+      min-height: 38px;
+      padding: 0 10px;
       font-size: 13px;
     }
     .checkbox-field {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: 7px;
+      min-height: 38px;
     }
     .summary {
       display: grid;
-      grid-template-columns: repeat(4, minmax(128px, 1fr));
-      gap: 12px;
-    }
-    .metric, .log {
-      background: var(--panel);
-      border: 1px solid var(--line);
-      border-radius: 8px;
+      grid-template-columns: repeat(4, minmax(120px, 1fr));
+      gap: 0;
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
     }
     .metric {
-      padding: 16px;
-      min-height: 82px;
+      min-height: 118px;
+      padding: 24px 24px 22px 0;
+      border-right: 1px solid var(--line);
+      background: transparent;
     }
+    .metric:last-child { border-right: 0; }
     .metric strong {
       display: block;
-      font-size: 28px;
-      line-height: 1.1;
-      margin-bottom: 6px;
+      margin-bottom: 10px;
+      color: var(--ink);
+      font-size: 42px;
+      font-weight: 650;
+      line-height: 1;
+      letter-spacing: 0;
     }
     .metric span {
       color: var(--muted);
       font-size: 13px;
+      font-weight: 400;
     }
     .log {
-      min-height: 430px;
-      padding: 18px;
+      min-height: 520px;
+      padding: 28px 0 0;
       overflow: auto;
+      border: 0;
+      border-top: 1px solid var(--line);
+      border-radius: 0;
+      background: transparent;
+      color: #313136;
       white-space: pre-wrap;
-      font-family: Consolas, "Microsoft YaHei UI", monospace;
+      font-family: "SF Mono", Consolas, "Microsoft YaHei UI", monospace;
       font-size: 13px;
-      line-height: 1.65;
+      line-height: 1.75;
     }
     .note {
-      padding: 14px;
-      border-radius: 8px;
-      background: #fff7ef;
-      color: #734018;
-      border: 1px solid #f0d3b8;
+      padding: 22px 0 0;
+      border: 0;
+      border-top: 1px solid var(--line);
+      border-radius: 0;
+      background: transparent;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.75;
     }
-    @media (max-width: 860px) {
-      main { grid-template-columns: 1fr; }
-      aside { border-right: 0; border-bottom: 1px solid var(--line); }
-      .summary { grid-template-columns: repeat(2, minmax(120px, 1fr)); }
+    @media (max-width: 980px) {
+      main {
+        width: min(720px, calc(100vw - 36px));
+        grid-template-columns: 1fr;
+        gap: 54px;
+        padding: 48px 0 64px;
+      }
+      h1 { max-width: 100%; }
+      section { padding-top: 0; }
+    }
+    @media (max-width: 640px) {
+      main { width: min(100% - 28px, 720px); }
+      .inline-grid, .setting-grid, .summary { grid-template-columns: 1fr; }
+      .metric {
+        min-height: 92px;
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+      .metric:last-child { border-bottom: 0; }
     }
   </style>
 </head>
@@ -335,13 +405,13 @@
           </select>
         </div>
         <div class="field format-panel">
-          <label for="exportFormat">导出格式（这里选择 PDF）</label>
+          <label for="exportFormat">&#23548;&#20986;&#26684;&#24335;</label>
           <select id="exportFormat">
-            <option value="docx" selected>Word（.docx）</option>
-            <option value="pdf">PDF（打开打印页后保存）</option>
-            <option value="both">Word + PDF 同时生成</option>
+            <option value="docx">Word&#65288;.docx&#65289;</option>
+            <option value="pdf">PDF&#65288;&#25171;&#24320;&#25171;&#21360;&#39029;&#21518;&#20445;&#23384;&#65289;</option>
+            <option value="both" selected>Word + PDF &#21516;&#26102;&#29983;&#25104;</option>
           </select>
-          <div class="help">选择 PDF 后，整理完成会自动打开打印页，在打印窗口里选“保存为 PDF”。</div>
+          <div class="help">&#40664;&#35748;&#20250;&#21516;&#26102;&#29983;&#25104; Word &#19979;&#36733;&#25353;&#38062;&#21644; PDF &#25171;&#21360;&#39029;&#12290;PDF &#25171;&#21360;&#39029;&#25171;&#24320;&#21518;&#65292;&#22312;&#25171;&#21360;&#31383;&#21475;&#37324;&#36873;&#8220;&#20445;&#23384;&#20026; PDF&#8221;&#12290;</div>
         </div>
         <details class="advanced-panel">
           <summary>高级格式设置</summary>
@@ -393,6 +463,7 @@
     const customRules = document.getElementById("customRules");
     const templateSettings = document.getElementById("templateSettings");
     let selectedFile = null;
+    let currentWordUrl = null;
     const state = { paras: 0, heads: 0, caps: 0, refs: 0 };
 
     const FONT_OPTIONS = ["宋体", "仿宋", "黑体", "楷体", "微软雅黑", "隶书", "华文中宋", "Times New Roman", "Arial"];
@@ -437,8 +508,13 @@
 
     function resetLog(text) {
       logEl.textContent = text;
+      if (currentWordUrl) {
+        URL.revokeObjectURL(currentWordUrl);
+        currentWordUrl = null;
+      }
       download.classList.remove("is-ready");
       download.removeAttribute("href");
+      download.removeAttribute("download");
       pdfDownload.classList.remove("is-ready");
       pdfDownload.removeAttribute("href");
       pdfDownload.onclick = null;
@@ -521,12 +597,20 @@
     renderTemplateSettings();
 
     function pickFile(file) {
-      selectedFile = file;
-      fileName.textContent = file ? file.name : "未选择文件";
+      if (file && !/\.docx?$/i.test(file.name)) {
+        selectedFile = null;
+        fileInput.value = "";
+        fileName.textContent = "\u672a\u9009\u62e9\u6587\u4ef6";
+        runBtn.disabled = true;
+        resetLog("\u8bf7\u4e0a\u4f20 .docx \u6216 .doc \u683c\u5f0f\u7684 Word \u6587\u4ef6\u3002");
+        return;
+      }
+      selectedFile = file || null;
+      fileName.textContent = file ? file.name : "\u672a\u9009\u62e9\u6587\u4ef6";
       runBtn.disabled = !file;
-      resetLog(file ? "已选择：" + file.name : "等待上传。");
+      resetLog(file ? "\u5df2\u9009\u62e9\uff1a" + file.name : "\u7b49\u5f85\u4e0a\u4f20\u3002");
       if (file && /\.doc$/i.test(file.name)) {
-        log("已选择老式 .doc 文件。当前为浏览器实验支持：会尽量提取文字后整理；复杂表格、图片、批注或特殊排版可能无法保留。");
+        log("\u5df2\u9009\u62e9\u8001\u5f0f .doc \u6587\u4ef6\u3002\u4f1a\u4f18\u5148\u8bfb\u53d6 Word 97-2003 \u6587\u5b57\u6d41\uff1b\u590d\u6742\u8868\u683c\u3001\u56fe\u7247\u3001\u6279\u6ce8\u6216\u7279\u6b8a\u6392\u7248\u53ef\u80fd\u65e0\u6cd5\u5b8c\u6574\u4fdd\u7559\u3002");
       }
     }
 
@@ -911,10 +995,160 @@
       return chinese * 4 + letters - controls * 3;
     }
 
+    function readU16(bytes, offset) {
+      return bytes[offset] | (bytes[offset + 1] << 8);
+    }
+
+    function readU32(bytes, offset) {
+      return (bytes[offset] | (bytes[offset + 1] << 8) | (bytes[offset + 2] << 16) | (bytes[offset + 3] << 24)) >>> 0;
+    }
+
+    function readI32(bytes, offset) {
+      return readU32(bytes, offset) | 0;
+    }
+
+    function isOleDoc(bytes) {
+      const sig = [0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1];
+      return sig.every((value, index) => bytes[index] === value);
+    }
+
+    function extractStreamChain(bytes, fat, startSector, sectorSize, maxSize) {
+      const parts = [];
+      let sector = startSector;
+      let guard = 0;
+      while (sector >= 0 && sector < fat.length && sector !== -2 && sector !== -1 && guard < fat.length + 4) {
+        const offset = (sector + 1) * sectorSize;
+        if (offset >= bytes.length) break;
+        parts.push(bytes.slice(offset, Math.min(offset + sectorSize, bytes.length)));
+        sector = fat[sector];
+        guard += 1;
+      }
+      const total = parts.reduce((sum, part) => sum + part.length, 0);
+      const out = new Uint8Array(Math.min(maxSize || total, total));
+      let cursor = 0;
+      for (const part of parts) {
+        const len = Math.min(part.length, out.length - cursor);
+        out.set(part.slice(0, len), cursor);
+        cursor += len;
+        if (cursor >= out.length) break;
+      }
+      return out;
+    }
+
+    function parseOleStreams(bytes) {
+      if (!isOleDoc(bytes)) return null;
+      const sectorSize = 1 << readU16(bytes, 0x1e);
+      const miniSectorSize = 1 << readU16(bytes, 0x20);
+      const firstDirSector = readI32(bytes, 0x30);
+      const miniCutoff = readU32(bytes, 0x38) || 4096;
+      const firstMiniFatSector = readI32(bytes, 0x3c);
+      const miniFatSectorCount = readU32(bytes, 0x40);
+      const difat = [];
+      for (let i = 0; i < 109; i += 1) {
+        const sid = readI32(bytes, 0x4c + i * 4);
+        if (sid >= 0) difat.push(sid);
+      }
+      const fat = [];
+      difat.forEach(sid => {
+        const offset = (sid + 1) * sectorSize;
+        for (let pos = 0; pos < sectorSize; pos += 4) fat.push(readI32(bytes, offset + pos));
+      });
+      const dirBytes = extractStreamChain(bytes, fat, firstDirSector, sectorSize, bytes.length);
+      const entries = [];
+      for (let offset = 0; offset + 128 <= dirBytes.length; offset += 128) {
+        const nameLen = readU16(dirBytes, offset + 64);
+        if (nameLen < 2) continue;
+        let name = "";
+        for (let i = 0; i + 1 < nameLen - 2; i += 2) name += String.fromCharCode(dirBytes[offset + i] | (dirBytes[offset + i + 1] << 8));
+        entries.push({ name, type: dirBytes[offset + 66], startSector: readI32(dirBytes, offset + 116), size: readU32(dirBytes, offset + 120) });
+      }
+      const byName = {};
+      entries.forEach(entry => { byName[entry.name.toLowerCase()] = entry; });
+      const root = entries.find(entry => entry.type === 5);
+      let miniFat = [];
+      if (firstMiniFatSector >= 0 && miniFatSectorCount > 0) {
+        const miniFatBytes = extractStreamChain(bytes, fat, firstMiniFatSector, sectorSize, miniFatSectorCount * sectorSize);
+        for (let offset = 0; offset + 4 <= miniFatBytes.length; offset += 4) miniFat.push(readI32(miniFatBytes, offset));
+      }
+      const rootMiniStream = root && root.startSector >= 0 ? extractStreamChain(bytes, fat, root.startSector, sectorSize, root.size) : new Uint8Array();
+      function getStream(name) {
+        const entry = byName[String(name).toLowerCase()];
+        if (!entry || entry.startSector < 0) return null;
+        if (entry.size < miniCutoff && entry.type === 2 && rootMiniStream.length && miniFat.length) {
+          const out = new Uint8Array(entry.size);
+          let cursor = 0;
+          let sector = entry.startSector;
+          let guard = 0;
+          while (sector >= 0 && sector < miniFat.length && sector !== -2 && guard < miniFat.length + 4 && cursor < out.length) {
+            const offset = sector * miniSectorSize;
+            const part = rootMiniStream.slice(offset, Math.min(offset + miniSectorSize, rootMiniStream.length));
+            const len = Math.min(part.length, out.length - cursor);
+            out.set(part.slice(0, len), cursor);
+            cursor += len;
+            sector = miniFat[sector];
+            guard += 1;
+          }
+          return out;
+        }
+        return extractStreamChain(bytes, fat, entry.startSector, sectorSize, entry.size);
+      }
+      return { getStream };
+    }
+
+    function decodeAnsiDocText(bytes) {
+      try { return new TextDecoder("gb18030").decode(bytes); }
+      catch (err) { return Array.from(bytes).map(byte => String.fromCharCode(byte)).join(""); }
+    }
+
+    function extractWordDocText(bytes) {
+      const ole = parseOleStreams(bytes);
+      if (!ole) return "";
+      const word = ole.getStream("WordDocument");
+      if (!word || word.length < 0x1aa || readU16(word, 0) !== 0xa5ec) return "";
+      const flags = readU16(word, 0x0a);
+      const table = ole.getStream((flags & 0x0200) ? "1Table" : "0Table");
+      if (!table) return "";
+      const fcClx = readU32(word, 0x01a2);
+      const lcbClx = readU32(word, 0x01a6);
+      if (!lcbClx || fcClx + lcbClx > table.length) return "";
+      let pos = fcClx;
+      const end = fcClx + lcbClx;
+      while (pos < end && table[pos] === 0x01) pos += 3 + readU16(table, pos + 1);
+      if (pos >= end || table[pos] !== 0x02) return "";
+      const lcb = readU32(table, pos + 1);
+      const pieceTable = pos + 5;
+      const pieceCount = Math.floor((lcb - 4) / 12);
+      if (pieceCount <= 0) return "";
+      const cpStart = pieceTable;
+      const pcdStart = cpStart + (pieceCount + 1) * 4;
+      const textParts = [];
+      for (let i = 0; i < pieceCount; i += 1) {
+        const fromCp = readU32(table, cpStart + i * 4);
+        const toCp = readU32(table, cpStart + (i + 1) * 4);
+        const chars = Math.max(0, toCp - fromCp);
+        if (!chars) continue;
+        let fc = readU32(table, pcdStart + i * 8 + 2);
+        const compressed = !!(fc & 0x40000000);
+        fc = fc & 0x3fffffff;
+        if (compressed) {
+          textParts.push(decodeAnsiDocText(word.slice(fc, Math.min(fc + chars, word.length))));
+        } else {
+          textParts.push(new TextDecoder("utf-16le").decode(word.slice(fc, Math.min(fc + chars * 2, word.length))));
+        }
+      }
+      return textParts.join("\n").replace(/[\r\u000b\u000c]+/g, "\n");
+    }
+
     async function extractDocParagraphs(file) {
       const buffer = await file.arrayBuffer();
       const bytes = new Uint8Array(buffer);
       const candidates = [];
+      try {
+        const oleText = cleanExtractedText(extractWordDocText(bytes));
+        if (oleText) candidates.push({ label: "word-binary", text: oleText, score: scoreExtractedText(oleText) + 100 });
+      } catch (err) {
+        log("\u8001\u5f0f .doc \u4e8c\u8fdb\u5236\u7ed3\u6784\u89e3\u6790\u5931\u8d25\uff0c\u6b63\u5728\u5c1d\u8bd5\u6587\u672c\u515c\u5e95\u63d0\u53d6\u3002");
+      }
       ["utf-16le", "gb18030", "utf-8"].forEach(label => {
         try {
           const text = cleanExtractedText(new TextDecoder(label).decode(bytes));
@@ -923,7 +1157,8 @@
       });
       candidates.sort((a, b) => b.score - a.score);
       const best = candidates[0] && candidates[0].text ? candidates[0] : null;
-      if (!best || best.score < 20) throw new Error("无法从这个 .doc 中提取可整理的文字。浏览器静态网页无法完整解析部分老式二进制 .doc，请用 Word/WPS 另存为 .docx 后再上传；如果要让所有 .doc 都可用，需要接 LibreOffice 后端。");
+      if (!best || best.score < 20) throw new Error("\u65e0\u6cd5\u4ece\u8fd9\u4e2a .doc \u4e2d\u63d0\u53d6\u53ef\u6574\u7406\u7684\u6587\u5b57\u3002\u9759\u6001\u7f51\u9875\u5df2\u652f\u6301\u5e38\u89c1 Word 97-2003 \u6587\u5b57\u6d41\u89e3\u6790\uff0c\u4f46\u52a0\u5bc6\u3001\u635f\u574f\u6216\u590d\u6742\u4e8c\u8fdb\u5236 .doc \u4ecd\u5efa\u8bae\u5148\u7528 Word/WPS \u53e6\u5b58\u4e3a .docx\uff1b\u5982\u679c\u8981 100% \u4fdd\u7559\u56fe\u7247\u3001\u8868\u683c\u3001\u9875\u7709\u9875\u811a\u548c\u6279\u6ce8\uff0c\u9700\u8981\u63a5 LibreOffice \u540e\u7aef\u8f6c\u6362\u670d\u52a1\u3002");
+      log(".doc \u6587\u5b57\u8bfb\u53d6\u65b9\u5f0f\uff1a" + best.label + "\u3002");
       const htmlLike = /<html[\s>]|<body[\s>]/i.test(best.text);
       const text = htmlLike ? new DOMParser().parseFromString(best.text, "text/html").body.textContent : best.text;
       return cleanExtractedText(text).split(/\n+/).filter(Boolean);
@@ -995,6 +1230,10 @@
 
     async function processDocument() {
       if (!selectedFile) return;
+      if (!window.JSZip) {
+        resetLog("???? jszip.min.js ??????? GitHub ???????? jszip.min.js?");
+        return;
+      }
       resetLog(isDocFile(selectedFile) ? "开始读取 .doc 文件。" : "开始读取 .docx 包。");
       runBtn.disabled = true;
       try {
@@ -1039,10 +1278,10 @@
           log("未识别到可自动套用的格式词，已按默认规范处理。可以直接写：我想让正文宋体小四，标题居中加粗，参考文献五号。");
         }
         const blob = await zip.generateAsync({ type: "blob", mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
-        const url = URL.createObjectURL(blob);
+        currentWordUrl = URL.createObjectURL(blob);
         const base = selectedFile.name.replace(/\.docx?$/i, "");
         if (exportFormat.value === "docx" || exportFormat.value === "both") {
-          download.href = url;
+          download.href = currentWordUrl;
           download.download = base + "_格式整理.docx";
           download.textContent = "下载整理后的 Word";
           download.classList.add("is-ready");
@@ -1055,9 +1294,16 @@
             openPdfPrintPage(doc, userOpt, base);
           };
           pdfDownload.classList.add("is-ready");
-          setTimeout(() => openPdfPrintPage(doc, userOpt, base), 50);
+          setTimeout(() => {
+            try { openPdfPrintPage(doc, userOpt, base); }
+            catch (err) { log("PDF \u81ea\u52a8\u6253\u5f00\u5931\u8d25\uff1a" + err.message + " \u53ef\u4ee5\u70b9\u51fb\u4e0b\u65b9\u6309\u94ae\u624b\u52a8\u6253\u5f00\u3002"); }
+          }, 50);
         }
-        log(exportFormat.value === "docx" ? "完成。请下载整理后的 Word，并在 Word/WPS 中更新目录页码。" : "完成。PDF 导出页已打开，请在打印窗口中选择保存为 PDF。");
+        if (exportFormat.value === "docx") {
+          log("\u5b8c\u6210\u3002\u8bf7\u4e0b\u8f7d\u6574\u7406\u540e\u7684 Word\uff0c\u5e76\u5728 Word/WPS \u4e2d\u66f4\u65b0\u76ee\u5f55\u9875\u7801\u3002");
+        } else {
+          log("\u5b8c\u6210\u3002\u5df2\u51c6\u5907 PDF \u5bfc\u51fa\u9875\uff1b\u5982\u679c\u6ca1\u6709\u81ea\u52a8\u5f39\u51fa\uff0c\u8bf7\u70b9\u51fb\u4e0b\u65b9\u6309\u94ae\u6253\u5f00\u540e\u9009\u62e9\u4fdd\u5b58\u4e3a PDF\u3002");
+        }
       } catch (err) {
         log("处理失败：" + err.message);
       } finally {
