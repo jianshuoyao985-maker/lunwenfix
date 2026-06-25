@@ -101,6 +101,28 @@
       overflow-wrap: anywhere;
       margin-top: 12px;
     }
+    .version {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      margin-top: 10px;
+      padding: 5px 9px;
+      border-radius: 999px;
+      background: var(--soft);
+      color: var(--green);
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .format-panel {
+      padding: 12px;
+      border: 1px solid #b9d7d0;
+      border-radius: 8px;
+      background: #f3faf8;
+    }
+    .format-panel label {
+      color: var(--green);
+      font-weight: 700;
+    }
     .controls {
       display: grid;
       gap: 12px;
@@ -249,6 +271,7 @@
       <div>
         <h1>论文 Word 格式助手</h1>
         <p>上传 `.docx` 或 `.doc` 后自动整理论文格式。可以导出 Word，也可以打开 PDF 导出页保存为 PDF。</p>
+        <span class="version">新版：支持 .doc/.docx，支持 PDF 导出</span>
       </div>
 
       <label id="drop" class="drop" for="file">
@@ -311,13 +334,14 @@
             <option value="right">右对齐</option>
           </select>
         </div>
-        <div class="field">
-          <label for="exportFormat">导出格式</label>
+        <div class="field format-panel">
+          <label for="exportFormat">导出格式（这里选择 PDF）</label>
           <select id="exportFormat">
             <option value="docx" selected>Word（.docx）</option>
-            <option value="pdf">PDF（打开页面后保存）</option>
-            <option value="both">Word + PDF</option>
+            <option value="pdf">PDF（打开打印页后保存）</option>
+            <option value="both">Word + PDF 同时生成</option>
           </select>
+          <div class="help">选择 PDF 后，整理完成会自动打开打印页，在打印窗口里选“保存为 PDF”。</div>
         </div>
         <details class="advanced-panel">
           <summary>高级格式设置</summary>
@@ -334,7 +358,7 @@
         <a id="pdfDownload" class="download" href="#">打开 PDF 导出页</a>
       </div>
 
-      <p class="note">`.docx` 会保留原文档结构并套用格式。老式 `.doc` 会在浏览器中尽量提取文字后整理，复杂表格、图片或批注建议先用 Word/WPS 另存为 `.docx` 后再上传。PDF 通过浏览器打印页保存。</p>
+      <p class="note">`.docx` 会保留原文档结构并套用格式。老式 `.doc` 是实验支持：浏览器会尽量提取文字后重新生成 Word，复杂表格、图片、页眉页脚、批注可能无法保留。若必须 100% 支持老 `.doc` 和高保真 PDF，需要接 LibreOffice 后端转换服务。</p>
     </aside>
 
     <section>
@@ -502,7 +526,7 @@
       runBtn.disabled = !file;
       resetLog(file ? "已选择：" + file.name : "等待上传。");
       if (file && /\.doc$/i.test(file.name)) {
-        log("已选择老式 .doc 文件。将尝试提取文字后整理；如果文档含复杂表格、图片或特殊排版，建议另存为 .docx 后再上传。");
+        log("已选择老式 .doc 文件。当前为浏览器实验支持：会尽量提取文字后整理；复杂表格、图片、批注或特殊排版可能无法保留。");
       }
     }
 
@@ -899,7 +923,7 @@
       });
       candidates.sort((a, b) => b.score - a.score);
       const best = candidates[0] && candidates[0].text ? candidates[0] : null;
-      if (!best || best.score < 20) throw new Error("无法从 .doc 中提取可整理的文字。请用 Word/WPS 另存为 .docx 后再上传。");
+      if (!best || best.score < 20) throw new Error("无法从这个 .doc 中提取可整理的文字。浏览器静态网页无法完整解析部分老式二进制 .doc，请用 Word/WPS 另存为 .docx 后再上传；如果要让所有 .doc 都可用，需要接 LibreOffice 后端。");
       const htmlLike = /<html[\s>]|<body[\s>]/i.test(best.text);
       const text = htmlLike ? new DOMParser().parseFromString(best.text, "text/html").body.textContent : best.text;
       return cleanExtractedText(text).split(/\n+/).filter(Boolean);
