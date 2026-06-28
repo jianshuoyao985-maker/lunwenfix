@@ -1,0 +1,1160 @@
+﻿<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>论文 Word 格式助手</title>
+  <script src="./jszip.min.js"></script>
+  <style>
+    :root {
+      --bg: #07102e;
+      --surface: rgba(9, 18, 52, .76);
+      --surface-strong: rgba(12, 23, 62, .94);
+      --ink: #f7f9ff;
+      --muted: #afbbdc;
+      --line: rgba(143, 169, 255, .22);
+      --line-strong: rgba(129, 165, 255, .48);
+      --accent: #6d7cff;
+      --accent-hover: #8290ff;
+      --cyan: #28d2ff;
+    }
+    * { box-sizing: border-box; }
+    html { background: var(--bg); }
+    body {
+      min-height: 100vh;
+      margin: 0;
+      background-color: var(--bg);
+      background-image: url("./tech-bg.webp");
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", "Microsoft YaHei", Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background: rgba(3, 8, 28, .5);
+    }
+    main {
+      position: relative;
+      z-index: 1;
+      width: min(1320px, calc(100vw - 48px));
+      min-height: 100vh;
+      margin: 0 auto;
+      padding: 72px 0 96px;
+      display: grid;
+      grid-template-columns: minmax(320px, 430px) minmax(0, 1fr);
+      gap: clamp(68px, 8vw, 132px);
+    }
+    aside { display: flex; flex-direction: column; gap: 44px; }
+    section { display: grid; align-content: start; gap: 56px; padding-top: 12px; }
+    h1 {
+      max-width: 11em;
+      margin: 0;
+      color: #fff;
+      font-size: clamp(44px, 5vw, 76px);
+      font-weight: 730;
+      line-height: .98;
+      letter-spacing: 0;
+    }
+    h2 { margin: 0 0 18px; color: #fff; font-size: 22px; font-weight: 650; line-height: 1.2; letter-spacing: 0; }
+    p { margin: 0; color: var(--muted); font-size: 15px; font-weight: 400; line-height: 1.7; }
+    .version {
+      display: inline-flex;
+      width: fit-content;
+      margin-top: 26px;
+      padding: 6px 10px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: rgba(95, 112, 232, .16);
+      color: #cfd8f8;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    .drop {
+      min-height: 204px;
+      display: grid;
+      place-items: center;
+      padding: 36px;
+      border: 1px solid var(--line-strong);
+      border-radius: 8px;
+      background: rgba(8, 18, 53, .68);
+      backdrop-filter: blur(18px);
+      text-align: center;
+      transition: border-color .18s ease, background .18s ease;
+    }
+    .drop.is-over { border-color: var(--cyan); background: rgba(17, 35, 83, .9); }
+    input[type=file] { display: none; }
+    .file-btn, button, .download {
+      min-height: 44px;
+      padding: 0 18px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #8794ff;
+      border-radius: 6px;
+      background: var(--accent);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 650;
+      line-height: 1;
+      text-decoration: none;
+      cursor: pointer;
+      user-select: none;
+      transition: opacity .16s ease, background .16s ease, transform .16s ease;
+    }
+    .file-btn:hover, button:hover:not(:disabled), .download:hover { background: var(--accent-hover); transform: translateY(-1px); }
+    .file-btn { min-width: 136px; }
+    button { width: 100%; }
+    button:disabled { cursor: not-allowed; opacity: .34; }
+    .download { display: none; width: 100%; background: rgba(9, 20, 58, .72); color: #eef2ff; border-color: var(--line-strong); }
+    .download.primary { background: var(--accent); border-color: #8794ff; }
+    .download.is-ready { display: flex; }
+    .file-name { margin-top: 16px; color: #fff; font-size: 14px; font-weight: 550; overflow-wrap: anywhere; }
+    .controls { display: grid; gap: 34px; }
+    .field { display: grid; gap: 12px; }
+    label { color: var(--muted); font-size: 12px; font-weight: 550; }
+    select, textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: rgba(6, 15, 45, .78);
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 15px;
+      font-weight: 400;
+      outline: none;
+      transition: border-color .16s ease, background .16s ease;
+    }
+    select:focus, textarea:focus { border-color: var(--cyan); background: rgba(12, 27, 68, .96); }
+    select option { color: #15203d; background: #f7f9ff; }
+    select { min-height: 44px; padding: 0 12px; }
+    textarea { min-height: 146px; padding: 14px; resize: vertical; line-height: 1.65; }
+    .help { color: var(--muted); font-size: 12px; font-weight: 400; line-height: 1.7; }
+    .inline-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .format-panel { padding: 0 0 34px; border-bottom: 1px solid var(--line); }
+    .format-panel label { color: #fff; font-size: 13px; font-weight: 650; }
+    .advanced-panel { padding: 34px 0 0; border-top: 1px solid var(--line); }
+    .advanced-panel summary { cursor: pointer; color: #fff; font-size: 15px; font-weight: 650; }
+    .template-settings { display: grid; margin-top: 18px; border-top: 1px solid var(--line); }
+    .setting-row { display: grid; gap: 14px; padding: 18px 0; border-bottom: 1px solid var(--line); }
+    .setting-title { color: #fff; font-size: 13px; font-weight: 650; }
+    .setting-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .mini-field { display: grid; gap: 6px; }
+    .mini-field label, .checkbox-field { color: var(--muted); font-size: 12px; font-weight: 400; }
+    .mini-field select { min-height: 38px; padding: 0 10px; font-size: 13px; }
+    .checkbox-field { min-height: 38px; display: inline-flex; align-items: center; gap: 7px; }
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(120px, 1fr));
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      background: rgba(6, 15, 44, .48);
+      backdrop-filter: blur(14px);
+    }
+    .metric { min-height: 118px; padding: 24px 24px 22px 0; border-right: 1px solid var(--line); }
+    .metric:last-child { border-right: 0; }
+    .metric strong { display: block; margin-bottom: 10px; color: #fff; font-size: 42px; font-weight: 650; line-height: 1; }
+    .metric span { color: var(--muted); font-size: 13px; }
+    .log {
+      min-height: 520px;
+      padding: 28px 0 0;
+      overflow: auto;
+      border-top: 1px solid var(--line);
+      color: #dce5ff;
+      white-space: pre-wrap;
+      font-family: "SF Mono", Consolas, "Microsoft YaHei UI", monospace;
+      font-size: 13px;
+      line-height: 1.75;
+    }
+    .note { padding: 32px 0 0; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; line-height: 1.75; }
+    .wechat-guide { display: none; padding: 18px 0 0; border-top: 1px solid var(--line); color: #d9e4ff; font-size: 13px; line-height: 1.75; }
+    .wechat-guide.is-visible { display: block; }
+    .wechat-guide strong { color: #fff; }
+    .status-chip { display: inline-flex; align-items: center; gap: 8px; margin-bottom: 10px; color: #7de3ff; font-size: 12px; font-weight: 650; }
+    .status-chip::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--cyan); }
+    .busy-overlay { display: none; position: fixed; inset: 0; z-index: 20; place-items: center; padding: 24px; background: rgba(3, 8, 28, .82); backdrop-filter: blur(12px); }
+    .busy-overlay.is-visible { display: grid; }
+    .busy-message { width: min(420px, 100%); padding: 28px; border: 1px solid var(--line-strong); border-radius: 8px; background: var(--surface-strong); color: #fff; text-align: center; line-height: 1.7; }
+    .busy-message strong { display: block; margin-bottom: 8px; font-size: 18px; }
+    .busy-message span { color: var(--muted); font-size: 13px; }
+    @media (max-width: 980px) {
+      body { background-attachment: scroll; }
+      main { width: min(720px, calc(100vw - 36px)); grid-template-columns: 1fr; gap: 64px; padding: 56px 0 76px; }
+      h1 { max-width: 100%; }
+      section { padding-top: 0; }
+    }
+    @media (max-width: 640px) {
+      main { width: min(100% - 28px, 720px); }
+      .inline-grid, .setting-grid, .summary { grid-template-columns: 1fr; }
+      .metric { min-height: 92px; border-right: 0; border-bottom: 1px solid var(--line); }
+      .metric:last-child { border-bottom: 0; }
+      .download, button { min-height: 48px; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <aside>
+      <div>
+        <h1>论文 Word<br>格式助手</h1>
+        <p>上传 `.docx` 或 `.doc`，自动识别内容并整理论文格式，完成后直接下载整理好的 Word。</p>
+        <span class="version">Word 直接下载 · 本地处理</span>
+      </div>
+
+      <label id="drop" class="drop" for="file">
+        <span>
+          <span class="file-btn">选择 Word 文件</span>
+          <p id="fileName" class="file-name">未选择文件</p>
+        </span>
+      </label>
+      <input id="file" type="file" accept=".docx,.doc">
+
+      <div class="controls">
+        <div class="field">
+          <label for="bodyFont">正文字体</label>
+          <select id="bodyFont">
+            <option value="宋体">宋体</option>
+            <option value="仿宋">仿宋</option>
+            <option value="黑体">黑体</option>
+            <option value="楷体">楷体</option>
+            <option value="微软雅黑">微软雅黑</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="bodySize">正文字号</label>
+          <select id="bodySize">
+            <option value="21">五号</option>
+            <option value="24" selected>小四</option>
+            <option value="28">四号</option>
+            <option value="30">小三</option>
+            <option value="32">三号</option>
+          </select>
+        </div>
+        <div class="inline-grid">
+          <div class="field">
+            <label for="bodyLine">正文行距</label>
+            <select id="bodyLine">
+              <option value="400|exact" selected>固定 20 磅</option>
+              <option value="360|auto">1.5 倍</option>
+              <option value="240|auto">单倍</option>
+              <option value="360|exact">固定 18 磅</option>
+              <option value="440|exact">固定 22 磅</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="bodyIndent">正文首行缩进</label>
+            <select id="bodyIndent">
+              <option value="0">不缩进</option>
+              <option value="210">1 字符</option>
+              <option value="420" selected>2 字符</option>
+              <option value="630">3 字符</option>
+              <option value="840">4 字符</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label for="bodyAlign">正文对齐</label>
+          <select id="bodyAlign">
+            <option value="both" selected>两端对齐</option>
+            <option value="left">左对齐</option>
+            <option value="center">居中</option>
+            <option value="right">右对齐</option>
+          </select>
+        </div>
+        <div class="field format-panel">
+          <label for="exportFormat">&#23548;&#20986;&#26684;&#24335;</label>
+          <select id="exportFormat"><option value="docx" selected>Word（.docx）</option></select>
+          <div class="help">仅生成整理后的 Word 文件，使用最初的浏览器原生下载方式。</div>
+        </div>
+        <details class="advanced-panel">
+          <summary>高级格式设置</summary>
+          <div id="templateSettings" class="template-settings"></div>
+          <div class="help">这里可以单独调整封面、标题、摘要、关键词、图表题注、参考文献、附录等模板项；下方自定义文字要求会优先覆盖这些选项。</div>
+        </details>
+        <div class="field">
+          <label for="customRules">自定义论文格式要求（可选）</label>
+          <textarea id="customRules" placeholder="像聊天一样描述即可，不用逐条填写。例：我想把正文改成宋体小四，行距20磅，首行缩进2字符；一级标题黑体三号居中加粗；参考文献用五号宋体。"></textarea>
+          <div class="help">可以输入一整段话。系统会自动寻找“正文、标题、摘要、关键词、图表题注、参考文献、附录、封面”等对象，并识别附近的字体、字号、行距、缩进、对齐、加粗要求。</div>
+        </div>
+        <button id="run" disabled>开始整理</button>
+        <a id="download" class="download primary" download>&#19979;&#36733;&#25972;&#29702;&#21518;&#30340; Word</a>
+      </div>
+
+      <p class="note">文件只在当前浏览器本地处理，不会上传服务器。完成后仅生成 Word 文件；老式 `.doc` 的复杂结构仍建议先用 Word/WPS 另存为 `.docx`。</p>
+    </aside>
+
+    <section>
+      <div class="summary">
+        <div class="metric"><strong id="mParas">0</strong><span>段落</span></div>
+        <div class="metric"><strong id="mHeads">0</strong><span>标题</span></div>
+        <div class="metric"><strong id="mCaps">0</strong><span>图表题注</span></div>
+        <div class="metric"><strong id="mRefs">0</strong><span>参考文献/附录</span></div>
+      </div>
+      <div>
+        <h2>处理记录</h2>
+        <div id="log" class="log">等待上传。</div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const W = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
+    const fileInput = document.getElementById("file");
+    const fileName = document.getElementById("fileName");
+    const runBtn = document.getElementById("run");
+    const logEl = document.getElementById("log");
+    const download = document.getElementById("download");
+    const drop = document.getElementById("drop");
+    const bodyFont = document.getElementById("bodyFont");
+    const bodySize = document.getElementById("bodySize");
+    const bodyLine = document.getElementById("bodyLine");
+    const bodyIndent = document.getElementById("bodyIndent");
+    const bodyAlign = document.getElementById("bodyAlign");
+    const exportFormat = document.getElementById("exportFormat");
+    const customRules = document.getElementById("customRules");
+    const templateSettings = document.getElementById("templateSettings");
+    let selectedFile = null;
+    let currentWordUrl = null;
+    let currentWordBlob = null;
+    let currentWordName = "";
+    let workerReadyPromise = null;
+    const isWechat = /MicroMessenger/i.test(navigator.userAgent);
+    const state = { paras: 0, heads: 0, caps: 0, refs: 0 };
+
+    const FONT_OPTIONS = ["宋体", "仿宋", "黑体", "楷体", "微软雅黑", "隶书", "华文中宋", "Times New Roman", "Arial"];
+    const SIZE_OPTIONS = [
+      [18, "小五"], [21, "五号"], [24, "小四"], [28, "四号"],
+      [30, "小三"], [32, "三号"], [36, "小二"], [44, "二号"]
+    ];
+    const LINE_OPTIONS = [
+      ["", "保持模板默认"], ["240|auto", "单倍"], ["360|auto", "1.5 倍"],
+      ["400|exact", "固定 20 磅"], ["360|exact", "固定 18 磅"],
+      ["440|exact", "固定 22 磅"], ["480|exact", "固定 24 磅"]
+    ];
+    const INDENT_OPTIONS = [["", "保持默认"], ["0", "不缩进"], ["210", "1 字符"], ["420", "2 字符"], ["630", "3 字符"], ["840", "4 字符"]];
+    const ALIGN_OPTIONS = [["", "保持模板默认"], ["both", "两端对齐"], ["left", "左对齐"], ["center", "居中"], ["right", "右对齐"]];
+    const FORMAT_GROUPS = [
+      { label: "封面大标题", types: ["coverMain"], defaults: { eastAsia: "黑体", size: 32, bold: true, align: "center", line: "480|exact", firstLine: "0" } },
+      { label: "封面中文题目", types: ["coverTitleCn"], defaults: { eastAsia: "黑体", size: 30, bold: true, align: "left", firstLine: "0" } },
+      { label: "封面英文题目", types: ["coverTitleEn"], defaults: { eastAsia: "Times New Roman", size: 28, bold: false, align: "left", firstLine: "0" } },
+      { label: "封面字段", types: ["coverField"], defaults: { eastAsia: "宋体", size: 28, bold: false, align: "left", firstLine: "0" } },
+      { label: "摘要标题", types: ["abstractTitle", "abstractTitleEn"], defaults: { eastAsia: "黑体", size: 32, bold: true, align: "center", line: "240|auto", firstLine: "0" } },
+      { label: "英文摘要正文", types: ["abstractBodyEn"], defaults: { eastAsia: "Times New Roman", size: 28, bold: false, align: "both", firstLine: "420" } },
+      { label: "关键词", types: ["keywords", "keywordsEn"], defaults: { eastAsia: "宋体", size: 24, bold: false, align: "left", firstLine: "0" } },
+      { label: "一级标题", types: ["heading1"], defaults: { eastAsia: "黑体", size: 32, bold: true, align: "center", firstLine: "0" } },
+      { label: "二级标题", types: ["heading2"], defaults: { eastAsia: "黑体", size: 28, bold: true, align: "left", firstLine: "0" } },
+      { label: "三级标题", types: ["heading3"], defaults: { eastAsia: "黑体", size: 24, bold: true, align: "left", firstLine: "0" } },
+      { label: "图表题注", types: ["caption"], defaults: { eastAsia: "宋体", size: 21, bold: false, align: "center", line: "360|auto", firstLine: "0" } },
+      { label: "参考文献", types: ["reference"], defaults: { eastAsia: "宋体", size: 21, bold: false, align: "left", line: "360|auto", firstLine: "0" } },
+      { label: "附录", types: ["appendix"], defaults: { eastAsia: "仿宋", size: 21, bold: false, align: "both", line: "360|auto", firstLine: "420" } }
+    ];
+
+    function syncMetrics() {
+      document.getElementById("mParas").textContent = state.paras;
+      document.getElementById("mHeads").textContent = state.heads;
+      document.getElementById("mCaps").textContent = state.caps;
+      document.getElementById("mRefs").textContent = state.refs;
+    }
+
+    function log(line) {
+      logEl.textContent += "\n" + line;
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    function revokeIfBlob(url) {
+      if (url && /^blob:/.test(url)) URL.revokeObjectURL(url);
+    }
+
+    function resetLog(text) {
+      logEl.textContent = text;
+      revokeIfBlob(currentWordUrl);
+      currentWordUrl = null;
+      currentWordBlob = null;
+      currentWordName = "";
+      download.classList.remove("is-ready");
+      download.removeAttribute("href");
+      download.removeAttribute("download");
+      download.onclick = null;
+      Object.keys(state).forEach(key => state[key] = 0);
+      syncMetrics();
+    }
+
+    function escapeHtml(text) {
+      return String(text).replace(/[&<>"]/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" }[ch]));
+    }
+
+    function optionList(options, selected) {
+      return options.map(item => {
+        const value = Array.isArray(item) ? item[0] : item;
+        const label = Array.isArray(item) ? item[1] : item;
+        const isSelected = String(value) === String(selected) ? " selected" : "";
+        return "<option value=\"" + escapeHtml(value) + "\"" + isSelected + ">" + escapeHtml(label) + "</option>";
+      }).join("");
+    }
+
+    function renderTemplateSettings() {
+      templateSettings.innerHTML = FORMAT_GROUPS.map((group, index) => {
+        const defaults = group.defaults;
+        const id = "fmt" + index;
+        return "<div class=\"setting-row\">" +
+          "<div class=\"setting-title\">" + escapeHtml(group.label) + "</div>" +
+          "<div class=\"setting-grid\">" +
+          "<div class=\"mini-field\"><label for=\"" + id + "Font\">字体</label><select id=\"" + id + "Font\">" + optionList(FONT_OPTIONS, defaults.eastAsia) + "</select></div>" +
+          "<div class=\"mini-field\"><label for=\"" + id + "Size\">字号</label><select id=\"" + id + "Size\">" + optionList(SIZE_OPTIONS, defaults.size) + "</select></div>" +
+          "<div class=\"mini-field\"><label for=\"" + id + "Line\">行距</label><select id=\"" + id + "Line\">" + optionList(LINE_OPTIONS, defaults.line || "") + "</select></div>" +
+          "<div class=\"mini-field\"><label for=\"" + id + "Indent\">首行缩进</label><select id=\"" + id + "Indent\">" + optionList(INDENT_OPTIONS, defaults.firstLine || "") + "</select></div>" +
+          "<div class=\"mini-field\"><label for=\"" + id + "Align\">对齐方式</label><select id=\"" + id + "Align\">" + optionList(ALIGN_OPTIONS, defaults.align || "") + "</select></div>" +
+          "<label class=\"checkbox-field\"><input id=\"" + id + "Bold\" type=\"checkbox\" " + (defaults.bold ? "checked" : "") + "> 加粗</label>" +
+          "</div></div>";
+      }).join("");
+    }
+
+    function parseLineOption(value) {
+      if (!value) return {};
+      const parts = value.split("|");
+      return { line: Number(parts[0]), lineRule: parts[1] || "auto" };
+    }
+
+    function getSelectText(select) {
+      return select.options[select.selectedIndex] ? select.options[select.selectedIndex].text : select.value;
+    }
+
+    function getTemplateOverrides() {
+      const overrides = {};
+      FORMAT_GROUPS.forEach((group, index) => {
+        const id = "fmt" + index;
+        const font = document.getElementById(id + "Font").value;
+        const style = {
+          eastAsia: font,
+          size: Number(document.getElementById(id + "Size").value),
+          align: document.getElementById(id + "Align").value || undefined,
+          bold: document.getElementById(id + "Bold").checked
+        };
+        if (/^[A-Za-z ]+$/.test(font)) style.ascii = font;
+        Object.assign(style, parseLineOption(document.getElementById(id + "Line").value));
+        const indent = document.getElementById(id + "Indent").value;
+        if (indent !== "") style.firstLine = Number(indent);
+        group.types.forEach(type => {
+          overrides[type] = mergeStyle(overrides[type], style);
+        });
+      });
+      return overrides;
+    }
+
+    function mergeOverrideMaps() {
+      const result = {};
+      Array.from(arguments).forEach(map => {
+        Object.keys(map || {}).forEach(type => {
+          result[type] = mergeStyle(result[type], map[type]);
+        });
+      });
+      return result;
+    }
+
+    renderTemplateSettings();
+
+    function pickFile(file) {
+      if (file && !/\.docx?$/i.test(file.name)) {
+        selectedFile = null;
+        fileInput.value = "";
+        fileName.textContent = "\u672a\u9009\u62e9\u6587\u4ef6";
+        runBtn.disabled = true;
+        resetLog("\u8bf7\u4e0a\u4f20 .docx \u6216 .doc \u683c\u5f0f\u7684 Word \u6587\u4ef6\u3002");
+        return;
+      }
+      selectedFile = file || null;
+      fileName.textContent = file ? file.name : "\u672a\u9009\u62e9\u6587\u4ef6";
+      runBtn.disabled = !file;
+      resetLog(file ? "\u5df2\u9009\u62e9\uff1a" + file.name : "\u7b49\u5f85\u4e0a\u4f20\u3002");
+      if (file && /\.doc$/i.test(file.name)) {
+        log("\u5df2\u9009\u62e9\u8001\u5f0f .doc \u6587\u4ef6\u3002\u4f1a\u4f18\u5148\u8bfb\u53d6 Word 97-2003 \u6587\u5b57\u6d41\uff1b\u590d\u6742\u8868\u683c\u3001\u56fe\u7247\u3001\u6279\u6ce8\u6216\u7279\u6b8a\u6392\u7248\u53ef\u80fd\u65e0\u6cd5\u5b8c\u6574\u4fdd\u7559\u3002");
+      }
+    }
+
+    fileInput.addEventListener("change", () => pickFile(fileInput.files[0]));
+    ["dragenter", "dragover"].forEach(eventName => {
+      drop.addEventListener(eventName, event => {
+        event.preventDefault();
+        drop.classList.add("is-over");
+      });
+    });
+    ["dragleave", "drop"].forEach(eventName => {
+      drop.addEventListener(eventName, event => {
+        event.preventDefault();
+        drop.classList.remove("is-over");
+      });
+    });
+    drop.addEventListener("drop", event => {
+      const file = event.dataTransfer.files[0];
+      if (file) pickFile(file);
+    });
+    runBtn.addEventListener("click", processDocument);
+    if (isWechat) wechatGuide.classList.add("is-visible");
+    ensureDownloadWorker();
+
+    function qn(local) { return "w:" + local; }
+    function children(el, name) { return Array.from(el.getElementsByTagNameNS(W, name)); }
+    function directChild(el, name) {
+      return Array.from(el.childNodes).find(n => n.nodeType === 1 && n.namespaceURI === W && n.localName === name) || null;
+    }
+    function make(doc, name) { return doc.createElementNS(W, qn(name)); }
+    function attr(el, name, value) { el.setAttributeNS(W, qn(name), String(value)); }
+    function ensure(parent, name, before) {
+      let el = directChild(parent, name);
+      if (!el) {
+        el = make(parent.ownerDocument, name);
+        parent.insertBefore(el, before || parent.firstChild);
+      }
+      return el;
+    }
+    function ensurePPr(p) { return ensure(p, "pPr", p.firstChild); }
+    function ensureRPr(r) { return ensure(r, "rPr", r.firstChild); }
+    function setVal(parent, name, value) {
+      const el = ensure(parent, name);
+      attr(el, "val", value);
+      return el;
+    }
+    function setFonts(rPr, eastAsia, ascii) {
+      const fonts = ensure(rPr, "rFonts");
+      attr(fonts, "eastAsia", eastAsia);
+      attr(fonts, "ascii", ascii || eastAsia);
+      attr(fonts, "hAnsi", ascii || eastAsia);
+    }
+    function setRunStyle(rPr, opt) {
+      setFonts(rPr, opt.eastAsia || "宋体", opt.ascii || "Times New Roman");
+      setVal(rPr, "sz", opt.size || 24);
+      setVal(rPr, "szCs", opt.size || 24);
+      if (opt.bold === true) ensure(rPr, "b");
+      if (opt.bold === false) {
+        const b = directChild(rPr, "b");
+        if (b) rPr.removeChild(b);
+      }
+      if (opt.italic) ensure(rPr, "i");
+    }
+    function setParaStyle(p, opt) {
+      const pPr = ensurePPr(p);
+      setVal(pPr, "jc", opt.align || "both");
+      const spacing = ensure(pPr, "spacing");
+      attr(spacing, "lineRule", opt.lineRule || "exact");
+      attr(spacing, "line", opt.line || 400);
+      attr(spacing, "before", opt.before || 0);
+      attr(spacing, "after", opt.after || 0);
+      const ind = ensure(pPr, "ind");
+      if (opt.firstLine !== undefined) attr(ind, "firstLine", opt.firstLine);
+      if (opt.left !== undefined) attr(ind, "left", opt.left);
+      if (opt.hanging !== undefined) attr(ind, "hanging", opt.hanging);
+      children(p, "r").forEach(r => setRunStyle(ensureRPr(r), opt));
+    }
+    function textOf(p) {
+      return children(p, "t").map(t => t.textContent).join("").replace(/\s+/g, " ").trim();
+    }
+    function classify(text, ctx) {
+      if (!text) return "blank";
+      if (/^上海师范大学本科毕业论文/.test(text)) ctx.inCover = false;
+      if (ctx.inCover && /^本\s*科\s*毕\s*业\s*论\s*文/.test(text)) return "coverMain";
+      if (ctx.inCover && /^题目（中文）/.test(text)) return "coverTitleCn";
+      if (ctx.inCover && /^（英文）/.test(text)) return "coverTitleEn";
+      if (ctx.inCover && /^(学\s*院|年级专业|学生姓名|学\s*号|指导教师|完\s*成\s*日\s*期)/.test(text)) return "coverField";
+      if (/^目\s*录$/.test(text)) return "heading1";
+      if (/^摘\s*要$/.test(text)) { ctx.inAbstract = "cn"; return "abstractTitle"; }
+      if (/^Abstract$/i.test(text)) { ctx.inAbstract = "en"; return "abstractTitleEn"; }
+      if (/^(关键词|关键字)\s*[:：]/.test(text)) return "keywords";
+      if (/^Keywords\s*[:：]/i.test(text)) return "keywordsEn";
+      if (/^参考文献$/.test(text)) { ctx.inRefs = true; ctx.inAppendix = false; return "heading1"; }
+      if (/^附录$/.test(text)) { ctx.inRefs = false; ctx.inAppendix = true; return "heading1"; }
+      if (/^第[一二三四五六七八九十百0-9]+章\b/.test(text) || /^(绪论|结语)$/.test(text)) return "heading1";
+      if (/^[一二三四五六七八九十]+、/.test(text)) return "heading2";
+      if (/^（[一二三四五六七八九十]+）/.test(text)) return "heading3";
+      if (/^图\s*\d+/.test(text) || /^表\s*\d+/.test(text) || /^附图/.test(text)) return "caption";
+      if (ctx.inRefs && text !== "参考文献") return "reference";
+      if (ctx.inAppendix && text !== "附录") return "appendix";
+      if (ctx.inAbstract === "en") return "abstractBodyEn";
+      return "body";
+    }
+    function mergeStyle(base, extra) {
+      return Object.assign({}, base || {}, extra || {});
+    }
+
+    function normalizeText(text) {
+      return (text || "").replace(/\s+/g, "").toLowerCase();
+    }
+
+    function uniqueTypes(types) {
+      return Array.from(new Set(types));
+    }
+
+    function parseChineseNumber(text) {
+      if (text === undefined || text === null || text === "") return undefined;
+      const raw = String(text).replace(/两/g, "二");
+      if (/^\d+(?:\.\d+)?$/.test(raw)) return Number(raw);
+      const map = { 零: 0, 一: 1, 二: 2, 三: 3, 四: 4, 五: 5, 六: 6, 七: 7, 八: 8, 九: 9, 十: 10 };
+      if (raw === "十") return 10;
+      if (raw.includes("十")) {
+        const parts = raw.split("十");
+        const tens = parts[0] ? map[parts[0]] : 1;
+        const ones = parts[1] ? map[parts[1]] : 0;
+        return tens * 10 + ones;
+      }
+      return map[raw];
+    }
+
+    function parseFont(text) {
+      const lower = (text || "").toLowerCase();
+      const fonts = ["Microsoft YaHei", "微软雅黑", "Times New Roman", "Arial", "宋体", "仿宋", "黑体", "楷体", "隶书", "华文中宋"];
+      return fonts.find(font => lower.includes(font.toLowerCase()));
+    }
+
+    function parseSize(text) {
+      const sizes = [
+        ["小二", 36], ["二号", 44], ["小三", 30], ["三号", 32],
+        ["小四", 24], ["四号", 28], ["小五", 18], ["五号", 21]
+      ];
+      const named = sizes.find(([name]) => text.includes(name));
+      if (named) return named[1];
+      const isLineOnly = /(行距|行间距|固定值?)/.test(text) && !/(字号|字体大小|文字大小|字的大小)/.test(text);
+      const pt = isLineOnly ? null : text.match(/(\d+(?:\.\d+)?)\s*(?:磅|pt|point)/i);
+      if (pt) return Math.round(Number(pt[1]) * 2);
+      const numbered = text.match(/(?:字号|字体大小|大小|用|改成|设为|设置为)?\s*(\d+(?:\.\d+)?)\s*(?:号字|号)/);
+      return numbered ? Math.round(Number(numbered[1]) * 2) : undefined;
+    }
+
+    function parseLine(text) {
+      const fixedA = text.match(/(?:固定值?|行距|行间距)\s*(?:为|是|设为|设置为|改成|调整为)?\s*(\d+(?:\.\d+)?)\s*(?:磅|pt)/i);
+      const fixedB = text.match(/(\d+(?:\.\d+)?)\s*(?:磅|pt)\s*(?:行距|行间距)/i);
+      const fixed = fixedA || fixedB;
+      if (fixed) return { line: Math.round(Number(fixed[1]) * 20), lineRule: "exact" };
+      const multiple = text.match(/(\d+(?:\.\d+)?)\s*倍(?:行距|行间距)?/);
+      if (multiple) return { line: Math.round(Number(multiple[1]) * 240), lineRule: "auto" };
+      if (text.includes("单倍")) return { line: 240, lineRule: "auto" };
+      if (text.includes("1.5倍") || text.includes("一倍半")) return { line: 360, lineRule: "auto" };
+      return {};
+    }
+
+    function parseIndent(text) {
+      if (text.includes("不缩进") || text.includes("无缩进") || text.includes("取消缩进")) return { firstLine: 0 };
+      const match = text.match(/首行缩进\s*(?:为|是|设为|设置为|改成|调整为)?\s*([\d.一二两三四五六七八九十]+)\s*(?:个)?(?:字符|字)/)
+        || text.match(/首行\s*(?:为|是|设为|设置为|改成|调整为)?\s*([\d.一二两三四五六七八九十]+)\s*(?:个)?(?:字符|字)/);
+      const loose = text.match(/缩进\s*([\d.一二两三四五六七八九十]+)\s*(?:个)?(?:字符|字)/);
+      const hit = match || loose;
+      if (!hit) return {};
+      const value = parseChineseNumber(hit[1]);
+      return value !== undefined ? { firstLine: Math.round(value * 210) } : {};
+    }
+
+    function parseAlign(text) {
+      if (text.includes("两端对齐") || text.includes("两边对齐")) return { align: "both" };
+      if (text.includes("右对齐") || text.includes("靠右")) return { align: "right" };
+      if (text.includes("左对齐") || text.includes("靠左")) return { align: "left" };
+      if (text.includes("居中") || text.includes("居中对齐") || text.includes("置中")) return { align: "center" };
+      return {};
+    }
+
+    function parseStyleFromText(text) {
+      const style = {};
+      const font = parseFont(text);
+      const size = parseSize(text);
+      if (font) style.eastAsia = font;
+      if (font && /^[A-Za-z ]+$/.test(font)) style.ascii = font;
+      if (size) style.size = size;
+      Object.assign(style, parseLine(text), parseIndent(text), parseAlign(text));
+      if (/不(?:要|用)?加粗|取消加粗|不要粗体|不粗/.test(text)) style.bold = false;
+      else if (text.includes("加粗") || text.includes("粗体")) style.bold = true;
+      return style;
+    }
+
+    const TARGET_PATTERNS = [
+      { types: ["abstractTitle", "abstractTitleEn"], patterns: ["摘要标题", "中英文摘要标题"] },
+      { types: ["abstractBodyEn"], patterns: ["英文摘要正文", "英文摘要", "abstract"] },
+      { types: ["keywords", "keywordsEn"], patterns: ["关键词", "关键字", "keywords"] },
+      { types: ["reference"], patterns: ["参考文献", "文献列表", "引用文献"] },
+      { types: ["appendix"], patterns: ["附录", "附件"] },
+      { types: ["caption"], patterns: ["图表题注", "图表", "题注", "图题", "表题", "图片标题", "表格标题"] },
+      { types: ["coverMain", "coverTitleCn", "coverTitleEn", "coverField"], patterns: ["封面", "封皮"] },
+      { types: ["heading1"], patterns: ["一级标题", "1级标题", "一标题", "章标题", "大标题"] },
+      { types: ["heading2"], patterns: ["二级标题", "2级标题", "二标题", "节标题"] },
+      { types: ["heading3"], patterns: ["三级标题", "3级标题", "三标题", "小标题"] },
+      { types: ["heading1", "heading2", "heading3"], patterns: ["各级标题", "所有标题", "全部标题", "标题"] },
+      { types: ["body", "abstractBodyEn"], patterns: ["摘要正文", "摘要"] },
+      { types: ["body"], patterns: ["正文", "正文部分", "主体", "普通段落", "段落"] },
+      { types: ["body"], patterns: ["全文", "全篇", "整篇论文", "整篇", "通篇"] }
+    ];
+
+    function findTargetMatches(text) {
+      const lower = (text || "").toLowerCase();
+      const matches = [];
+      TARGET_PATTERNS.forEach(rule => {
+        rule.patterns.forEach(pattern => {
+          const needle = pattern.toLowerCase();
+          let index = lower.indexOf(needle);
+          while (index !== -1) {
+            matches.push({ index, end: index + pattern.length, types: rule.types, label: pattern });
+            index = lower.indexOf(needle, index + Math.max(needle.length, 1));
+          }
+        });
+      });
+      const sorted = matches.sort((a, b) => a.index - b.index || (b.end - b.index) - (a.end - a.index));
+      return sorted.filter((match, index) => {
+        return !sorted.slice(0, index).some(prev => match.index < prev.end && prev.index < match.end);
+      });
+    }
+
+    function parseTargetTypes(text) {
+      return uniqueTypes(findTargetMatches(text).flatMap(match => match.types));
+    }
+
+    function splitFreeText(text) {
+      const parts = [];
+      (text || "")
+        .split(/[;；。！？!?\n\r]+/)
+        .map(item => item.trim())
+        .filter(Boolean)
+        .forEach(sentence => {
+          sentence.split(/[,，]+/).map(item => item.trim()).filter(Boolean).forEach(clause => {
+            const matches = findTargetMatches(clause);
+            if (matches.length <= 1) {
+              parts.push(clause);
+              return;
+            }
+            matches.forEach((match, index) => {
+              const next = matches[index + 1];
+              const piece = clause.slice(match.index, next ? next.index : clause.length).trim();
+              if (piece) parts.push(piece);
+            });
+          });
+        });
+      return parts;
+    }
+
+    function styleSummary(style) {
+      const items = [];
+      if (style.eastAsia) items.push(style.eastAsia);
+      if (style.size) items.push("字号" + style.size / 2 + "磅");
+      if (style.line) items.push((style.lineRule === "exact" ? "固定" + style.line / 20 + "磅" : style.line / 240 + "倍") + "行距");
+      if (style.firstLine !== undefined) items.push("首行缩进" + style.firstLine / 210 + "字符");
+      if (style.align) items.push({ both: "两端对齐", left: "左对齐", center: "居中", right: "右对齐" }[style.align] || style.align);
+      if (style.bold === true) items.push("加粗");
+      if (style.bold === false) items.push("不加粗");
+      return items.join("、");
+    }
+
+    function targetSummary(types) {
+      const names = {
+        body: "正文", heading1: "一级标题", heading2: "二级标题", heading3: "三级标题",
+        abstractTitle: "摘要标题", abstractTitleEn: "英文摘要标题", abstractBodyEn: "英文摘要正文",
+        keywords: "关键词", keywordsEn: "英文关键词", caption: "图表题注", reference: "参考文献", appendix: "附录",
+        coverMain: "封面大标题", coverTitleCn: "封面中文题目", coverTitleEn: "封面英文题目", coverField: "封面字段"
+      };
+      return types.map(type => names[type] || type).join("、");
+    }
+
+    function parseCustomRequirements(text) {
+      const overrides = {};
+      const notes = [];
+      let lastTargets = [];
+      splitFreeText(text).forEach(raw => {
+        const style = parseStyleFromText(raw);
+        const hasStyle = Object.keys(style).length > 0;
+        const explicitTargets = parseTargetTypes(raw);
+        if (explicitTargets.length) lastTargets = explicitTargets;
+        const targets = explicitTargets.length ? explicitTargets : lastTargets.length ? lastTargets : ["body"];
+        if (!hasStyle) return;
+        targets.forEach(type => {
+          overrides[type] = mergeStyle(overrides[type], style);
+        });
+        notes.push(targetSummary(targets) + "：" + styleSummary(style));
+      });
+      return { overrides, notes };
+    }
+
+    function applyByType(p, type, userOpt) {
+      if (type === "blank") return;
+      const body = { eastAsia: userOpt.bodyFont, size: userOpt.bodySize, align: userOpt.bodyAlign, line: userOpt.bodyLine, lineRule: userOpt.bodyLineRule, firstLine: userOpt.bodyFirstLine, before: 0, after: 0 };
+      const styles = {
+        coverMain: { eastAsia: "黑体", size: 32, bold: true, align: "center", line: 480, firstLine: 0, after: 240 },
+        coverTitleCn: { eastAsia: "黑体", size: 30, bold: true, align: "left", firstLine: 0 },
+        coverTitleEn: { eastAsia: "Times New Roman", ascii: "Times New Roman", size: 28, align: "left", firstLine: 0 },
+        coverField: { eastAsia: "宋体", size: 28, align: "left", firstLine: 0 },
+        abstractTitle: { eastAsia: "黑体", size: 32, bold: true, align: "center", line: 240, lineRule: "auto", firstLine: 0 },
+        abstractTitleEn: { eastAsia: "Times New Roman", ascii: "Times New Roman", size: 28, bold: true, align: "center", line: 240, lineRule: "auto", firstLine: 0 },
+        keywords: { eastAsia: "宋体", size: 24, align: "left", firstLine: 0 },
+        keywordsEn: { eastAsia: "Times New Roman", ascii: "Times New Roman", size: 28, align: "left", firstLine: 0 },
+        heading1: { eastAsia: "黑体", size: 32, bold: true, align: "center", firstLine: 0, before: 240, after: 120 },
+        heading2: { eastAsia: "黑体", size: 28, bold: true, align: "left", firstLine: 0, before: 120, after: 60 },
+        heading3: { eastAsia: "黑体", size: 24, bold: true, align: "left", firstLine: 0, before: 80, after: 40 },
+        caption: { eastAsia: "宋体", size: 21, align: "center", line: 360, firstLine: 0, before: 80, after: 80 },
+        reference: { eastAsia: "宋体", size: 21, align: "left", line: 360, firstLine: 0, left: 420, hanging: 420 },
+        appendix: { eastAsia: "仿宋", size: 21, align: "both", line: 360, lineRule: "auto", firstLine: 420 },
+        abstractBodyEn: { eastAsia: "Times New Roman", ascii: "Times New Roman", size: 28, align: "both", firstLine: 420 },
+        body
+      };
+      const base = styles[type] || body;
+      setParaStyle(p, mergeStyle(base, userOpt.overrides && userOpt.overrides[type]));
+    }
+    function normalizeSections(doc) {
+      children(doc, "sectPr").forEach(sectPr => {
+        const pgMar = ensure(sectPr, "pgMar");
+        attr(pgMar, "top", 1440);
+        attr(pgMar, "right", 1440);
+        attr(pgMar, "bottom", 1440);
+        attr(pgMar, "left", 1440);
+        attr(pgMar, "header", 720);
+        attr(pgMar, "footer", 720);
+        attr(pgMar, "gutter", 0);
+      });
+    }
+    function normalizeTables(doc) {
+      children(doc, "tbl").forEach(tbl => {
+        const tblPr = ensure(tbl, "tblPr", tbl.firstChild);
+        setVal(tblPr, "jc", "center");
+        const margins = ensure(tblPr, "tblCellMar");
+        ["top", "left", "bottom", "right"].forEach(side => {
+          const el = ensure(margins, side);
+          attr(el, "w", 108);
+          attr(el, "type", "dxa");
+        });
+      });
+    }
+    async function markTocDirty(zip) {
+      const settings = zip.file("word/settings.xml");
+      if (!settings) return false;
+      const xml = await settings.async("string");
+      if (xml.includes("<w:updateFields")) return false;
+      zip.file("word/settings.xml", xml.replace("</w:settings>", '<w:updateFields w:val="true"/></w:settings>'));
+      return true;
+    }
+    function escapeXml(text) {
+      return String(text).replace(/[<>&"']/g, ch => {
+        if (ch === "<") return "&lt;";
+        if (ch === ">") return "&gt;";
+        if (ch === "&") return "&amp;";
+        if (ch === "\"") return "&quot;";
+        return "&apos;";
+      });
+    }
+
+    function isDocFile(file) {
+      return /\.doc$/i.test(file.name) && !/\.docx$/i.test(file.name);
+    }
+
+    function cleanExtractedText(text) {
+      return (text || "")
+        .replace(/\u0000/g, "")
+        .replace(/[\x01-\x08\x0b\x0c\x0e-\x1f]+/g, "\n")
+        .replace(/[ \t]{2,}/g, " ")
+        .split(/\n+/)
+        .map(line => line.trim())
+        .filter(line => line.length > 1 && !/^[\W_]+$/.test(line))
+        .join("\n");
+    }
+
+    function scoreExtractedText(text) {
+      const chinese = (text.match(/[\u4e00-\u9fff]/g) || []).length;
+      const letters = (text.match(/[A-Za-z0-9]/g) || []).length;
+      const controls = (text.match(/[\x00-\x08\x0b\x0c\x0e-\x1f]/g) || []).length;
+      return chinese * 4 + letters - controls * 3;
+    }
+
+    function readU16(bytes, offset) {
+      return bytes[offset] | (bytes[offset + 1] << 8);
+    }
+
+    function readU32(bytes, offset) {
+      return (bytes[offset] | (bytes[offset + 1] << 8) | (bytes[offset + 2] << 16) | (bytes[offset + 3] << 24)) >>> 0;
+    }
+
+    function readI32(bytes, offset) {
+      return readU32(bytes, offset) | 0;
+    }
+
+    function isOleDoc(bytes) {
+      const sig = [0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1];
+      return sig.every((value, index) => bytes[index] === value);
+    }
+
+    function extractStreamChain(bytes, fat, startSector, sectorSize, maxSize) {
+      const parts = [];
+      let sector = startSector;
+      let guard = 0;
+      while (sector >= 0 && sector < fat.length && sector !== -2 && sector !== -1 && guard < fat.length + 4) {
+        const offset = (sector + 1) * sectorSize;
+        if (offset >= bytes.length) break;
+        parts.push(bytes.slice(offset, Math.min(offset + sectorSize, bytes.length)));
+        sector = fat[sector];
+        guard += 1;
+      }
+      const total = parts.reduce((sum, part) => sum + part.length, 0);
+      const out = new Uint8Array(Math.min(maxSize || total, total));
+      let cursor = 0;
+      for (const part of parts) {
+        const len = Math.min(part.length, out.length - cursor);
+        out.set(part.slice(0, len), cursor);
+        cursor += len;
+        if (cursor >= out.length) break;
+      }
+      return out;
+    }
+
+    function parseOleStreams(bytes) {
+      if (!isOleDoc(bytes)) return null;
+      const sectorSize = 1 << readU16(bytes, 0x1e);
+      const miniSectorSize = 1 << readU16(bytes, 0x20);
+      const firstDirSector = readI32(bytes, 0x30);
+      const miniCutoff = readU32(bytes, 0x38) || 4096;
+      const firstMiniFatSector = readI32(bytes, 0x3c);
+      const miniFatSectorCount = readU32(bytes, 0x40);
+      const difat = [];
+      for (let i = 0; i < 109; i += 1) {
+        const sid = readI32(bytes, 0x4c + i * 4);
+        if (sid >= 0) difat.push(sid);
+      }
+      const fat = [];
+      difat.forEach(sid => {
+        const offset = (sid + 1) * sectorSize;
+        for (let pos = 0; pos < sectorSize; pos += 4) fat.push(readI32(bytes, offset + pos));
+      });
+      const dirBytes = extractStreamChain(bytes, fat, firstDirSector, sectorSize, bytes.length);
+      const entries = [];
+      for (let offset = 0; offset + 128 <= dirBytes.length; offset += 128) {
+        const nameLen = readU16(dirBytes, offset + 64);
+        if (nameLen < 2) continue;
+        let name = "";
+        for (let i = 0; i + 1 < nameLen - 2; i += 2) name += String.fromCharCode(dirBytes[offset + i] | (dirBytes[offset + i + 1] << 8));
+        entries.push({ name, type: dirBytes[offset + 66], startSector: readI32(dirBytes, offset + 116), size: readU32(dirBytes, offset + 120) });
+      }
+      const byName = {};
+      entries.forEach(entry => { byName[entry.name.toLowerCase()] = entry; });
+      const root = entries.find(entry => entry.type === 5);
+      let miniFat = [];
+      if (firstMiniFatSector >= 0 && miniFatSectorCount > 0) {
+        const miniFatBytes = extractStreamChain(bytes, fat, firstMiniFatSector, sectorSize, miniFatSectorCount * sectorSize);
+        for (let offset = 0; offset + 4 <= miniFatBytes.length; offset += 4) miniFat.push(readI32(miniFatBytes, offset));
+      }
+      const rootMiniStream = root && root.startSector >= 0 ? extractStreamChain(bytes, fat, root.startSector, sectorSize, root.size) : new Uint8Array();
+      function getStream(name) {
+        const entry = byName[String(name).toLowerCase()];
+        if (!entry || entry.startSector < 0) return null;
+        if (entry.size < miniCutoff && entry.type === 2 && rootMiniStream.length && miniFat.length) {
+          const out = new Uint8Array(entry.size);
+          let cursor = 0;
+          let sector = entry.startSector;
+          let guard = 0;
+          while (sector >= 0 && sector < miniFat.length && sector !== -2 && guard < miniFat.length + 4 && cursor < out.length) {
+            const offset = sector * miniSectorSize;
+            const part = rootMiniStream.slice(offset, Math.min(offset + miniSectorSize, rootMiniStream.length));
+            const len = Math.min(part.length, out.length - cursor);
+            out.set(part.slice(0, len), cursor);
+            cursor += len;
+            sector = miniFat[sector];
+            guard += 1;
+          }
+          return out;
+        }
+        return extractStreamChain(bytes, fat, entry.startSector, sectorSize, entry.size);
+      }
+      return { getStream };
+    }
+
+    function decodeAnsiDocText(bytes) {
+      try { return new TextDecoder("gb18030").decode(bytes); }
+      catch (err) { return Array.from(bytes).map(byte => String.fromCharCode(byte)).join(""); }
+    }
+
+    function extractWordDocText(bytes) {
+      const ole = parseOleStreams(bytes);
+      if (!ole) return "";
+      const word = ole.getStream("WordDocument");
+      if (!word || word.length < 0x1aa || readU16(word, 0) !== 0xa5ec) return "";
+      const flags = readU16(word, 0x0a);
+      const table = ole.getStream((flags & 0x0200) ? "1Table" : "0Table");
+      if (!table) return "";
+      const fcClx = readU32(word, 0x01a2);
+      const lcbClx = readU32(word, 0x01a6);
+      if (!lcbClx || fcClx + lcbClx > table.length) return "";
+      let pos = fcClx;
+      const end = fcClx + lcbClx;
+      while (pos < end && table[pos] === 0x01) pos += 3 + readU16(table, pos + 1);
+      if (pos >= end || table[pos] !== 0x02) return "";
+      const lcb = readU32(table, pos + 1);
+      const pieceTable = pos + 5;
+      const pieceCount = Math.floor((lcb - 4) / 12);
+      if (pieceCount <= 0) return "";
+      const cpStart = pieceTable;
+      const pcdStart = cpStart + (pieceCount + 1) * 4;
+      const textParts = [];
+      for (let i = 0; i < pieceCount; i += 1) {
+        const fromCp = readU32(table, cpStart + i * 4);
+        const toCp = readU32(table, cpStart + (i + 1) * 4);
+        const chars = Math.max(0, toCp - fromCp);
+        if (!chars) continue;
+        let fc = readU32(table, pcdStart + i * 8 + 2);
+        const compressed = !!(fc & 0x40000000);
+        fc = fc & 0x3fffffff;
+        if (compressed) {
+          textParts.push(decodeAnsiDocText(word.slice(fc, Math.min(fc + chars, word.length))));
+        } else {
+          textParts.push(new TextDecoder("utf-16le").decode(word.slice(fc, Math.min(fc + chars * 2, word.length))));
+        }
+      }
+      return textParts.join("\n").replace(/[\r\u000b\u000c]+/g, "\n");
+    }
+
+    async function extractDocParagraphs(file) {
+      const buffer = await file.arrayBuffer();
+      const bytes = new Uint8Array(buffer);
+      const candidates = [];
+      try {
+        const oleText = cleanExtractedText(extractWordDocText(bytes));
+        if (oleText) candidates.push({ label: "word-binary", text: oleText, score: scoreExtractedText(oleText) + 100 });
+      } catch (err) {
+        log("\u8001\u5f0f .doc \u4e8c\u8fdb\u5236\u7ed3\u6784\u89e3\u6790\u5931\u8d25\uff0c\u6b63\u5728\u5c1d\u8bd5\u6587\u672c\u515c\u5e95\u63d0\u53d6\u3002");
+      }
+      ["utf-16le", "gb18030", "utf-8"].forEach(label => {
+        try {
+          const text = cleanExtractedText(new TextDecoder(label).decode(bytes));
+          candidates.push({ label, text, score: scoreExtractedText(text) });
+        } catch (err) {}
+      });
+      candidates.sort((a, b) => b.score - a.score);
+      const best = candidates[0] && candidates[0].text ? candidates[0] : null;
+      if (!best || best.score < 20) throw new Error("\u65e0\u6cd5\u4ece\u8fd9\u4e2a .doc \u4e2d\u63d0\u53d6\u53ef\u6574\u7406\u7684\u6587\u5b57\u3002\u9759\u6001\u7f51\u9875\u5df2\u652f\u6301\u5e38\u89c1 Word 97-2003 \u6587\u5b57\u6d41\u89e3\u6790\uff0c\u4f46\u52a0\u5bc6\u3001\u635f\u574f\u6216\u590d\u6742\u4e8c\u8fdb\u5236 .doc \u4ecd\u5efa\u8bae\u5148\u7528 Word/WPS \u53e6\u5b58\u4e3a .docx\uff1b\u5982\u679c\u8981 100% \u4fdd\u7559\u56fe\u7247\u3001\u8868\u683c\u3001\u9875\u7709\u9875\u811a\u548c\u6279\u6ce8\uff0c\u9700\u8981\u63a5 LibreOffice \u540e\u7aef\u8f6c\u6362\u670d\u52a1\u3002");
+      log(".doc \u6587\u5b57\u8bfb\u53d6\u65b9\u5f0f\uff1a" + best.label + "\u3002");
+      const htmlLike = /<html[\s>]|<body[\s>]/i.test(best.text);
+      const text = htmlLike ? new DOMParser().parseFromString(best.text, "text/html").body.textContent : best.text;
+      return cleanExtractedText(text).split(/\n+/).filter(Boolean);
+    }
+
+    async function createDocxZipFromParagraphs(paragraphs) {
+      const zip = new JSZip();
+      const pXml = paragraphs.map(text => '<w:p><w:r><w:t xml:space="preserve">' + escapeXml(text) + '</w:t></w:r></w:p>').join("");
+      zip.file("[Content_Types].xml", '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/settings.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml"/></Types>');
+      zip.folder("_rels").file(".rels", '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>');
+      zip.folder("word").file("document.xml", '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>' + pXml + '<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440" w:header="720" w:footer="720" w:gutter="0"/></w:sectPr></w:body></w:document>');
+      zip.folder("word").file("settings.xml", '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:settings xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:updateFields w:val="true"/></w:settings>');
+      zip.folder("word").folder("_rels").file("document.xml.rels", '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"/>');
+      return zip;
+    }
+
+    function getParaStyleForHtml(type, userOpt) {
+      const body = { eastAsia: userOpt.bodyFont, size: userOpt.bodySize, align: userOpt.bodyAlign, line: userOpt.bodyLine, lineRule: userOpt.bodyLineRule, firstLine: userOpt.bodyFirstLine, before: 0, after: 0 };
+      const styles = {
+        coverMain: { eastAsia: "黑体", size: 32, bold: true, align: "center", line: 480, firstLine: 0, after: 240 },
+        coverTitleCn: { eastAsia: "黑体", size: 30, bold: true, align: "left", firstLine: 0 },
+        coverTitleEn: { eastAsia: "Times New Roman", ascii: "Times New Roman", size: 28, align: "left", firstLine: 0 },
+        coverField: { eastAsia: "宋体", size: 28, align: "left", firstLine: 0 },
+        abstractTitle: { eastAsia: "黑体", size: 32, bold: true, align: "center", line: 240, lineRule: "auto", firstLine: 0 },
+        abstractTitleEn: { eastAsia: "Times New Roman", ascii: "Times New Roman", size: 28, bold: true, align: "center", line: 240, lineRule: "auto", firstLine: 0 },
+        keywords: { eastAsia: "宋体", size: 24, align: "left", firstLine: 0 },
+        keywordsEn: { eastAsia: "Times New Roman", ascii: "Times New Roman", size: 28, align: "left", firstLine: 0 },
+        heading1: { eastAsia: "黑体", size: 32, bold: true, align: "center", firstLine: 0, before: 240, after: 120 },
+        heading2: { eastAsia: "黑体", size: 28, bold: true, align: "left", firstLine: 0, before: 120, after: 60 },
+        heading3: { eastAsia: "黑体", size: 24, bold: true, align: "left", firstLine: 0, before: 80, after: 40 },
+        caption: { eastAsia: "宋体", size: 21, align: "center", line: 360, firstLine: 0, before: 80, after: 80 },
+        reference: { eastAsia: "宋体", size: 21, align: "left", line: 360, firstLine: 0, left: 420, hanging: 420 },
+        appendix: { eastAsia: "仿宋", size: 21, align: "both", line: 360, lineRule: "auto", firstLine: 420 },
+        abstractBodyEn: { eastAsia: "Times New Roman", ascii: "Times New Roman", size: 28, align: "both", firstLine: 420 },
+        body
+      };
+      return mergeStyle(styles[type] || body, userOpt.overrides && userOpt.overrides[type]);
+    }
+
+    function setBusy(visible, title, detail) {
+      busyOverlay.classList.toggle("is-visible", visible);
+      if (title) busyTitle.textContent = title;
+      if (detail) busyDetail.textContent = detail;
+    }
+
+    function nextPaint() {
+      return new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    }
+
+    function bindPreparedLink(anchor, url, name) {
+      anchor.href = url;
+      anchor.download = name;
+      anchor.onclick = null;
+      anchor.classList.add("is-ready");
+    }
+
+    async function loadInputAsDocxZip(file) {
+      if (isDocFile(file)) {
+        log("正在从 .doc 中提取文字。");
+        const paragraphs = await extractDocParagraphs(file);
+        log("已从 .doc 提取 " + paragraphs.length + " 个段落，将按规范重新生成 Word 结构。");
+        return createDocxZipFromParagraphs(paragraphs);
+      }
+      return JSZip.loadAsync(await file.arrayBuffer());
+    }
+
+    async function processDocument() {
+      if (!selectedFile) return;
+      if (!window.JSZip) {
+        resetLog("???? jszip.min.js ??????? GitHub ???????? jszip.min.js?");
+        return;
+      }
+      resetLog(isDocFile(selectedFile) ? "开始读取 .doc 文件。" : "开始读取 .docx 包。");
+      runBtn.disabled = true;
+      try {
+        const custom = parseCustomRequirements(customRules.value);
+        const bodyLineOpt = parseLineOption(bodyLine.value);
+        const userOpt = {
+          bodyFont: bodyFont.value,
+          bodySize: Number(bodySize.value),
+          bodyAlign: bodyAlign.value,
+          bodyLine: bodyLineOpt.line || 400,
+          bodyLineRule: bodyLineOpt.lineRule || "exact",
+          bodyFirstLine: Number(bodyIndent.value),
+          overrides: mergeOverrideMaps(getTemplateOverrides(), custom.overrides)
+        };
+        const zip = await loadInputAsDocxZip(selectedFile);
+        const docFile = zip.file("word/document.xml");
+        if (!docFile) throw new Error("没有找到 word/document.xml，这不是有效的 .docx。");
+        const xml = await docFile.async("string");
+        const doc = new DOMParser().parseFromString(xml, "application/xml");
+        if (doc.getElementsByTagName("parsererror").length) throw new Error("document.xml 解析失败。");
+        const ctx = { inCover: true, inAbstract: false, inRefs: false, inAppendix: false };
+        children(doc, "p").forEach(p => {
+          const txt = textOf(p);
+          const type = classify(txt, ctx);
+          applyByType(p, type, userOpt);
+          if (txt) state.paras += 1;
+          if (/^heading/.test(type)) state.heads += 1;
+          if (type === "caption") state.caps += 1;
+          if (type === "reference" || type === "appendix") state.refs += 1;
+        });
+        normalizeSections(doc);
+        normalizeTables(doc);
+        zip.file("word/document.xml", new XMLSerializer().serializeToString(doc));
+        await markTocDirty(zip);
+        syncMetrics();
+        log("已应用页面边距、标题、摘要、题注、参考文献和附录格式。");
+        log("正文使用：" + userOpt.bodyFont + " / " + getSelectText(bodySize) + " / " + getSelectText(bodyLine) + " / 首行缩进" + getSelectText(bodyIndent) + "。");
+        log("高级格式设置已应用：" + FORMAT_GROUPS.length + " 类模板项。自定义文本要求会作为最后覆盖规则。");
+        if (custom.notes.length) {
+          log("已识别自定义要求：" + custom.notes.join("；"));
+        } else if (customRules.value.trim()) {
+          log("未识别到可自动套用的格式词，已按默认规范处理。可以直接写：我想让正文宋体小四，标题居中加粗，参考文献五号。");
+        }
+        const blob = await zip.generateAsync({ type: "blob", mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
+        currentWordBlob = blob;
+        const base = selectedFile.name.replace(/\.docx?$/i, "");
+        currentWordName = "论文格式整理结果.docx";
+        const wantsWord = true;
+        currentWordUrl = URL.createObjectURL(currentWordBlob);
+        download.textContent = "下载整理后的 Word";
+        bindPreparedLink(download, currentWordUrl, currentWordName);
+        log("完成。请点击下方按钮下载整理后的 Word。");
+      } catch (err) {
+        log("处理失败：" + err.message);
+      } finally {
+        runBtn.disabled = !selectedFile;
+      }
+    }
+  </script>
+</body>
+</html>
