@@ -1,0 +1,12 @@
+services:
+  paper:
+    build: .
+    env_file: .env
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - paper-data:/app/data
+    restart: unless-stopped
+    stop_grace_period: 310s
+volumes:
+  paper-data:

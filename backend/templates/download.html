@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="zh-CN"><head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="referrer" content="no-referrer"><meta name="robots" content="noindex,nofollow">
+  <title>论文 Fix · 取件页</title>
+  <link rel="stylesheet" href="{{ url_for('frontend', filename='styles.css') }}">
+  <script src="{{ url_for('frontend', filename='downloads.js') }}" defer></script>
+  <script src="{{ url_for('frontend', filename='pickup.js') }}" defer></script>
+</head><body><main class="download-page">
+  <a class="brand" href="{{ url_for('index') }}"><span class="brand-icon" aria-hidden="true">文</span>论文<span class="brand-fix">Fix</span></a>
+  <section id="pickup" class="panel result-panel" aria-live="polite">
+  {% if result %}
+    <h1>你的论文取件页</h1><p class="busy-view">{{ result.stage }}</p>
+    <p class="muted">文件处理完成后，将在这里显示下载入口。</p>
+    <noscript><p>请开启 JavaScript 后查看处理进度。</p>{% if result.status == 'ready' %}<p><a href="{{ result.docx_url }}">下载 Word</a></p>{% if result.pdf_url %}<p><a href="{{ result.pdf_url }}">下载 PDF</a></p>{% endif %}{% endif %}</noscript>
+  {% else %}
+    <h1>文件不存在或已过期</h1><p class="download-detail">请回到首页重新上传论文，生成新的文件。</p><a class="button" href="{{ url_for('index') }}">返回首页</a>
+  {% endif %}
+  </section>
+  {% if result %}<script type="application/json" id="jobData">{{ result | tojson }}</script>{% endif %}
+  <footer><p>请及时保存文件。取件链接可以复制到系统浏览器继续打开。</p></footer>
+</main></body></html>

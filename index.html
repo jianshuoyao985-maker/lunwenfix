@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#163c3b"><meta name="referrer" content="no-referrer">
+  <title>论文 Fix · 把格式要求说出来</title>
+  <link rel="stylesheet" href="./styles.css">
+  <script src="./config.js" defer></script><script src="./jszip.min.js" defer></script>
+  <script src="./rules.js" defer></script><script src="./formatter.js" defer></script><script src="./local-files.js" defer></script>
+  <script src="./downloads.js" defer></script><script src="./app.js" defer></script>
+</head>
+<body>
+  <header class="topbar"><a class="brand" href="./"><span class="brand-icon" aria-hidden="true">文</span>论文<span class="brand-fix">Fix</span></a><span class="version">格式整理助手 · 对话版</span></header>
+  <main class="workspace">
+    <div class="intro"><p class="eyebrow">少一点调格式，多一点专注。</p><h1>把格式要求，<span>说出来。</span></h1><p>上传论文，像聊天一样告诉我怎么排版。支持继续补充，也能随时撤回。</p></div>
+    <div id="connection" class="notice" role="status">正在准备格式助手…</div>
+    <button id="localFallback" class="button outline" type="button" hidden>改用本机处理 .docx</button>
+    <div id="resume" class="notice" hidden></div>
+    <div class="layout">
+      <div class="left-column">
+        <section class="panel upload-panel" aria-labelledby="uploadTitle">
+          <div class="section-label"><span class="step">01</span><h2 id="uploadTitle">先放入你的论文</h2><span class="tag">Word 文档</span></div>
+          <label class="drop-zone" id="dropZone" for="file"><span class="upload-mark" aria-hidden="true">↑</span><span><strong id="fileName">点击选择，或把论文拖到这里</strong><span id="fileMeta">支持 .docx / .doc</span></span><span class="pick-label">选择文件</span></label>
+          <input id="file" class="sr-only" type="file" accept=".docx,.doc,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
+          <p id="privacyNote" class="small-note">文档在当前浏览器内处理，不上传。原稿不会被覆盖。</p>
+          <p id="wechatStart" class="wechat-help" hidden></p>
+        </section>
+        <section class="panel chat-panel" aria-labelledby="chatTitle">
+          <div class="section-label"><span class="step">02</span><h2 id="chatTitle">告诉我，想怎么改</h2><span id="engine" class="tag">常用格式识别</span></div>
+          <div id="messages" class="messages" role="log" aria-live="polite" aria-relevant="additions text"></div>
+          <div class="examples" aria-label="试试这些描述">
+            <button class="chip" type="button" data-example="正文宋体小四，1.5倍行距，首行缩进2个字；一级标题黑体三号居中；二级标题黑体四号；参考文献宋体五号。">常用论文格式 <span>↗</span></button>
+            <button class="chip" type="button" data-example="正文行距改成固定值20磅，英文和数字用Times New Roman。">调整行距和英文 <span>↗</span></button>
+            <button class="chip" type="button" data-example="页边距上下2.5厘米，左右3厘米。">调整页边距 <span>↗</span></button>
+          </div>
+          <form id="chatForm" class="composer">
+            <label class="sr-only" for="message">描述论文格式要求</label>
+            <textarea id="message" maxlength="6000" rows="3" placeholder="例如：正文用宋体小四，1.5 倍行距。一级标题黑体三号居中，参考文献五号。也可以粘贴学校的格式要求…"></textarea>
+            <div class="composer-bottom"><span class="composer-hint">可继续说：“再把正文行距改成 20 磅”</span><button id="send" class="button" type="submit" disabled>发送要求 <span aria-hidden="true">↑</span></button></div>
+          </form>
+          <div class="chat-tools"><button id="undo" class="text-button" disabled>撤回上一轮</button><button id="reset" class="text-button" disabled>恢复默认格式</button><label id="aiOption" hidden class="check-label"><input id="useAi" type="checkbox">启用智能理解</label></div>
+          <p id="aiPrivacy" class="small-note" hidden>启用后，仅将你输入的格式描述和当前格式清单发送给已配置的 AI 服务，论文文件不会发送给 AI。</p>
+        </section>
+      </div>
+      <aside class="panel format-panel" aria-labelledby="formatTitle">
+        <div class="section-label"><span class="step">03</span><h2 id="formatTitle">核对格式，开始整理</h2></div>
+        <div class="summary-intro"><span class="status-dot"></span><p id="summaryNote">未指定的项目使用下方默认值</p></div>
+        <div id="ruleSummary" class="rule-summary"><p class="muted">格式清单加载中…</p></div>
+        <p class="small-note">使用保守识别：含公式、图片或复杂域的段落会尽量保留原格式，处理后请检查封面与目录。</p>
+        <div class="generate-box"><label id="pdfOption" class="check-label" hidden><input id="makePdf" type="checkbox">同时生成 PDF 预览</label><button id="run" class="button primary-action" disabled>生成排版文件 <span aria-hidden="true">→</span></button><p id="status" class="action-status" role="status">请选择论文并核对格式清单。</p><progress id="progress" hidden aria-label="文件正在处理"></progress></div>
+      </aside>
+    </div>
+    <section id="result" class="panel result-panel" hidden aria-labelledby="resultTitle"></section>
+    <footer><span>论文 Fix</span><p>格式可以更省心，最后一遍检查留给你。<br><span id="footerMode">本机处理 · Word 下载与手机保存</span></p></footer>
+  </main>
+</body>
+</html>
