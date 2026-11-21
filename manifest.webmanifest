@@ -1,0 +1,16 @@
+{
+  "name": "论文格式一键修复 · lunwenfix.online",
+  "short_name": "论文Fix",
+  "description": "浏览器本地处理 .docx，用一句话描述格式要求，生成并下载修复后的论文文档。默认不上传论文原文。",
+  "lang": "zh-CN",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f4f5f0",
+  "theme_color": "#163c3b",
+  "icons": [
+    {"src": "/assets/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+    {"src": "/assets/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+    {"src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any"}
+  ]
+}
