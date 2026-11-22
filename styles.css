@@ -355,7 +355,8 @@ a { color: var(--green); text-underline-offset: .22em; }
 
 /* 工作台 */
 .workspace { padding-top: clamp(26px, 4vw, 52px); }
-.view-entering { animation: workspace-enter .22s ease-out both; }
+/* 只让内容入场，底部导航始终相对视口定位。 */
+.view-entering > .workspace { animation: workspace-enter .22s ease-out; }
 @keyframes workspace-enter {
   from { opacity: 0; transform: translateY(7px); }
   to { opacity: 1; transform: none; }
@@ -813,6 +814,6 @@ progress { width: 100%; height: 8px; margin-top: 10px; accent-color: var(--green
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .view-entering { animation: none; }
+  .view-entering > .workspace { animation: none; }
   .button, .chip, .drop-zone, .start-button .icon { transition: none; }
 }
