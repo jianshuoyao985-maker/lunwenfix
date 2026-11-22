@@ -785,6 +785,11 @@ progress { width: 100%; height: 8px; margin-top: 10px; accent-color: var(--green
     background: var(--paper);
     box-shadow: 0 -6px 18px rgba(18, 58, 53, .07);
   }
+  .mobile-tabs.visual-viewport-dock {
+    top: var(--mobile-viewport-bottom);
+    bottom: auto;
+    transform: translateY(-100%);
+  }
   .mobile-tab {
     display: flex;
     flex-direction: column;

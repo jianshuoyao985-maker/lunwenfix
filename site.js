@@ -7,6 +7,16 @@
 
   /* ---------- 启动开始界面 → 工具主界面（单页双视图，无路由） ---------- */
   const launch = $('launchView'), app = $('appView'), start = $('startJourney');
+  const mobileTabs = $('mobileTabs');
+  const visualViewport = window.visualViewport;
+  function dockMobileTabs() {
+    if (!visualViewport || mobileTabs.hidden || visualViewport.height <= 0) return;
+    // Safari 的固定定位边界和实际可见区域可能不同。
+    const bottom = (visualViewport.offsetTop + visualViewport.height) + 'px';
+    if (mobileTabs.style.getPropertyValue('--mobile-viewport-bottom') === bottom) return;
+    mobileTabs.style.setProperty('--mobile-viewport-bottom', bottom);
+    mobileTabs.classList.add('visual-viewport-dock');
+  }
   function showApp() {
     if (!launch || !app || !app.hidden) return;
     launch.hidden = true;
@@ -17,6 +27,10 @@
     if (skip) skip.setAttribute('href', '#mainContent');
     window.scrollTo(0, 0);
     app.querySelector('.intro h1').focus({preventScroll: true});
+    if (mobileTabs) {
+      mobileTabs.hidden = false;
+      dockMobileTabs();
+    }
   }
   if (start) start.addEventListener('click', showApp);
   // 首次访问 / 刷新始终回到启动页，并回到顶部，避免浏览器恢复上次滚动位置。
@@ -35,8 +49,22 @@
   });
 
   /* ---------- 手机端专用使用窗口：底部步骤导航 ---------- */
-  const mobileTabs = $('mobileTabs');
   if (mobileTabs) {
+    if (visualViewport) {
+      let frame = 0;
+      const requestDock = () => {
+        if (frame || mobileTabs.hidden) return;
+        frame = window.requestAnimationFrame(() => {
+          frame = 0;
+          dockMobileTabs();
+        });
+      };
+      visualViewport.addEventListener('resize', requestDock);
+      visualViewport.addEventListener('scroll', requestDock, {passive:true});
+      window.addEventListener('scroll', requestDock, {passive:true});
+      window.addEventListener('resize', requestDock);
+      window.addEventListener('pageshow', requestDock);
+    }
     const buttons = Array.from(mobileTabs.querySelectorAll('[data-mobile-target]'));
     const mobileRun = $('mobileRun'), run = $('run');
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');

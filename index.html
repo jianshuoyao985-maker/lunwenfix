@@ -40,7 +40,7 @@
   <link rel="apple-touch-icon" href="./apple-touch-icon.png">
   <link rel="manifest" href="./manifest.webmanifest">
 
-  <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="./styles.css?v=viewport-dock">
   <script src="./config.js" defer></script>
   <script src="./jszip.min.js" defer></script>
   <script src="./rules.js" defer></script>
@@ -49,7 +49,7 @@
   <script src="./preview.js" defer></script>
   <script src="./local-files.js" defer></script>
   <script src="./downloads.js" defer></script>
-  <script src="./site.js" defer></script>
+  <script src="./site.js?v=viewport-dock" defer></script>
   <script src="./app.js" defer></script>
 </head>
 <body>
@@ -208,16 +208,16 @@
       <!-- 文档样式预览窗口（P1-8），仅本地处理完成后展示 -->
       <section id="previewPanel" class="panel preview-panel" hidden aria-labelledby="previewTitle"></section>
     </main>
+  </div>
 
-    <!-- 手机端专用使用窗口：底部步骤导航 + 一键生成 -->
-    <nav id="mobileTabs" class="mobile-tabs" aria-label="手机端工具导航">
+  <!-- 底栏放在工作台之外，跟随浏览器可见区域。 -->
+  <nav id="mobileTabs" class="mobile-tabs" aria-label="手机端工具导航" hidden>
       <button class="mobile-tab is-active" type="button" data-mobile-target="uploadPanel" aria-controls="uploadPanel" aria-label="上传论文" aria-current="true"><svg class="icon" aria-hidden="true"><use href="#icon-upload"/></svg><span class="mobile-tab-label">上传</span></button>
       <button class="mobile-tab" type="button" data-mobile-target="chatPanel" aria-controls="chatPanel" aria-label="输入排版要求"><svg class="icon" aria-hidden="true"><use href="#icon-message"/></svg><span class="mobile-tab-label">要求</span></button>
       <button class="mobile-tab" type="button" data-mobile-target="formatPanel" aria-controls="formatPanel" aria-label="核对格式清单"><svg class="icon" aria-hidden="true"><use href="#icon-list"/></svg><span class="mobile-tab-label">格式</span></button>
       <button id="mobileRun" class="mobile-tab mobile-tab-run" type="button" aria-label="生成排版文件" disabled><svg class="icon" aria-hidden="true"><use href="#icon-arrow"/></svg><span class="mobile-tab-label">生成</span></button>
       <button class="mobile-tab" type="button" data-mobile-target="result" aria-controls="result" aria-label="查看生成结果"><svg class="icon" aria-hidden="true"><use href="#icon-check"/></svg><span class="mobile-tab-label">结果</span></button>
-    </nav>
-  </div>
+  </nav>
 
   <!-- 全站页脚：品牌与站内导航 -->
   <footer class="site-footer" id="siteFooter">
