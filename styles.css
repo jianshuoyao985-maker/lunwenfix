@@ -91,23 +91,15 @@ img.brand-icon{background:transparent;padding:0;width:38px;height:38px;border-ra
 /* 全站 footer（P0-1 / P0-2 / P0-4） */
 .site-footer{display:block;max-width:1320px;margin:42px auto 0;padding:34px 42px 26px;border-top:1px solid var(--line);color:var(--muted);font-size:11px}
 .site-footer p{text-align:left;margin:0}
-.footer-grid{display:grid;grid-template-columns:minmax(220px,1.15fr) minmax(120px,.55fr) minmax(280px,1.3fr);gap:34px;align-items:start}
+.footer-grid{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:40px;align-items:start}
 .footer-brand .brand{font-size:18px;margin-bottom:12px}
 .site-footer img.brand-icon{width:34px;height:34px}
 .footer-brand p{color:#8b958d;line-height:1.85;max-width:280px}
 .footer-mode{margin-top:6px!important;color:#74837a!important;font-size:10.5px}
-.footer-links h2,.footer-feedback h2{font-size:10px;letter-spacing:1.4px;color:#96a298;margin:0 0 12px;font-weight:650;text-transform:uppercase}
-.footer-links a{display:block;color:#5f7067;text-decoration:none;font-size:12px;padding:5px 0;width:max-content}
+.footer-links{text-align:right}
+.footer-links h2{font-size:10px;letter-spacing:1.4px;color:#96a298;margin:0 0 12px;font-weight:650;text-transform:uppercase}
+.footer-links a{display:block;color:#5f7067;text-decoration:none;font-size:12px;padding:5px 0;width:max-content;margin-left:auto}
 .footer-links a:hover{color:var(--green);text-decoration:underline;text-underline-offset:3px}
-.footer-feedback form{display:grid;gap:8px}
-.footer-feedback textarea,.footer-feedback input{width:100%;border:1px solid #d9e0d5;border-radius:8px;background:#fff;padding:10px 11px;font-size:11px;line-height:1.6;color:var(--ink);resize:vertical}
-.footer-feedback textarea{min-height:58px}
-.footer-feedback textarea::placeholder,.footer-feedback input::placeholder{color:#a4aea5}
-.footer-feedback .button{justify-self:start;min-height:38px;padding:8px 16px;font-size:11px}
-.feedback-status{min-height:16px;font-size:11px;line-height:1.7;color:var(--green);margin:2px 0 0!important}
-.feedback-status.error{color:var(--error)}
-.footer-note{font-size:10px;line-height:1.75;color:#9aa49c;margin-top:8px!important}
-.footer-contact{margin-top:9px!important;font-size:10.5px;color:#7d8b82}
 .footer-copy{text-align:center!important;margin-top:18px!important;font-size:10px;color:#a6afa7}
 
 /* 隐私政策 / 免责声明文档页 */
@@ -126,7 +118,7 @@ img.brand-icon{background:transparent;padding:0;width:38px;height:38px;border-ra
 
 /* 响应式：新增模块 */
 @media(max-width:1100px){
-  .footer-grid{grid-template-columns:minmax(200px,1fr) minmax(110px,.5fr) minmax(260px,1.2fr);gap:26px}
+  .footer-grid{grid-template-columns:minmax(0,1fr) auto;gap:28px}
 }
 @media(max-width:900px){
   .topnav{gap:14px;margin-right:10px}
@@ -154,7 +146,8 @@ img.brand-icon{background:transparent;padding:0;width:38px;height:38px;border-ra
   .preview-actions .button{width:100%;margin-bottom:10px}
   .site-footer{padding:26px 16px 20px;margin-top:30px}
   .footer-grid{grid-template-columns:1fr;gap:26px}
-  .footer-links a{display:inline-block;margin-right:18px;width:auto}
+  .footer-links{text-align:left}
+  .footer-links a{display:inline-block;margin:0 18px 0 0;width:auto}
   .footer-copy{text-align:left!important}
   .doc-page{padding:26px 16px 0}
   .doc-card{padding:24px 20px 22px}
@@ -167,10 +160,6 @@ img.brand-icon{background:transparent;padding:0;width:38px;height:38px;border-ra
 }
 
 /* 移动端表单字号 ≥16px，避免 iOS 聚焦时自动放大页面 */
-@media(max-width:720px){
-  .footer-feedback textarea,.footer-feedback input{font-size:16px}
-  .footer-feedback .button{font-size:12px}
-}
 
 /* 手机端专用使用窗口：底部步骤导航 + 一键生成 */
 .mobile-tabs{display:none}
@@ -187,3 +176,19 @@ img.brand-icon{background:transparent;padding:0;width:38px;height:38px;border-ra
   .workspace{padding-bottom:8px}
 }
 
+
+/* 格式清单下拉框：正文 / 一级标题 / 二级标题 / 参考文献 / 页面 */
+.rule-editor{display:grid;gap:6px;margin-top:2px}
+.rule-editor-page{grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:8px}
+.rule-editor-page .rule-current{grid-column:1/-1}
+.rule-field{display:grid;gap:3px;min-width:0}
+.rule-field-label{font-size:9px;letter-spacing:.4px;color:#9aa49c}
+.rule-select{width:100%;min-width:0;border:1px solid #d9e0d5;border-radius:7px;background:#fff;color:#3d5146;font-size:11px;padding:7px 8px;line-height:1.4}
+.rule-select:focus-visible{outline:2px solid #bd8f3d;outline-offset:2px}
+.rule-current{margin:0;font-size:10.5px;line-height:1.7;color:#7c867e;overflow-wrap:anywhere}
+.rule-row.changed .rule-select{border-color:#b9cfb2;background:#fbfdf8}
+@media(max-width:720px){
+  .rule-editor-page{grid-template-columns:1fr}
+  /* 避免 iOS 聚焦下拉框时自动放大页面 */
+  .rule-select{font-size:16px;padding:8px}
+}

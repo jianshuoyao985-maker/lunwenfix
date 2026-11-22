@@ -18,6 +18,92 @@
   const cloudMode = () => backendReady && $('useCloud').checked;
   function saveChat() {storage.set('lunwenfix-v3-chat', {rules, rows, context, history:history.slice(-12), conversation:conversation.slice(-40)});}
 
+  /* ---------- 格式清单下拉框：常用预设，点击后立即写入当前规则 ---------- */
+  const PARAGRAPH_PRESETS = {
+    body: [
+      {id:'song-xiaosi', label:'宋体小四 · 1.5 倍 · 首行 2 字', style:{font:'宋体',size:12,line:{mode:'multiple',value:1.5},align:'both',first_line:2,bold:null,space_before:0,space_after:0}},
+      {id:'fangsong-san', label:'仿宋三号 · 1.5 倍 · 首行 2 字', style:{font:'仿宋',size:16,line:{mode:'multiple',value:1.5},align:'both',first_line:2,bold:null,space_before:0,space_after:0}},
+      {id:'kai-xiaosi', label:'楷体小四 · 1.5 倍 · 首行 2 字', style:{font:'楷体',size:12,line:{mode:'multiple',value:1.5},align:'both',first_line:2,bold:null,space_before:0,space_after:0}},
+      {id:'song-wuhao', label:'宋体五号 · 单倍 · 首行 2 字', style:{font:'宋体',size:10.5,line:{mode:'multiple',value:1},align:'both',first_line:2,bold:null,space_before:0,space_after:0}},
+      {id:'song-xiaosi-2', label:'宋体小四 · 2 倍 · 首行 2 字', style:{font:'宋体',size:12,line:{mode:'multiple',value:2},align:'both',first_line:2,bold:null,space_before:0,space_after:0}},
+      {id:'song-fixed-20', label:'宋体小四 · 固定行距 20 磅', style:{font:'宋体',size:12,line:{mode:'exact',value:20},align:'both',first_line:2,bold:null,space_before:0,space_after:0}}
+    ],
+    heading1: [
+      {id:'hei-san-center', label:'黑体三号 · 居中', style:{font:'黑体',size:16,line:{mode:'multiple',value:1.5},align:'center',first_line:0,bold:true,space_before:12,space_after:6}},
+      {id:'hei-er-center', label:'黑体二号 · 居中', style:{font:'黑体',size:22,line:{mode:'multiple',value:1.5},align:'center',first_line:0,bold:true,space_before:12,space_after:6}},
+      {id:'song-san-bold', label:'宋体三号 · 加粗 · 居中', style:{font:'宋体',size:16,line:{mode:'multiple',value:1.5},align:'center',first_line:0,bold:true,space_before:12,space_after:6}},
+      {id:'hei-xiaosan', label:'黑体小三 · 居中', style:{font:'黑体',size:15,line:{mode:'multiple',value:1.5},align:'center',first_line:0,bold:true,space_before:12,space_after:6}}
+    ],
+    heading2: [
+      {id:'hei-si', label:'黑体四号 · 左对齐', style:{font:'黑体',size:14,line:{mode:'multiple',value:1.5},align:'left',first_line:0,bold:true,space_before:6,space_after:6}},
+      {id:'hei-xiaosan', label:'黑体小三 · 左对齐', style:{font:'黑体',size:15,line:{mode:'multiple',value:1.5},align:'left',first_line:0,bold:true,space_before:6,space_after:6}},
+      {id:'song-si-bold', label:'宋体四号 · 加粗 · 左对齐', style:{font:'宋体',size:14,line:{mode:'multiple',value:1.5},align:'left',first_line:0,bold:true,space_before:6,space_after:6}}
+    ],
+    reference: [
+      {id:'song-wuhao', label:'宋体五号 · GB/T 7714 悬挂', style:{font:'宋体',size:10.5,line:{mode:'multiple',value:1},align:'left',first_line:0,bold:null,space_before:0,space_after:0}},
+      {id:'fangsong-wuhao', label:'仿宋五号 · GB/T 7714 悬挂', style:{font:'仿宋',size:10.5,line:{mode:'multiple',value:1},align:'left',first_line:0,bold:null,space_before:0,space_after:0}},
+      {id:'kai-wuhao', label:'楷体五号 · GB/T 7714 悬挂', style:{font:'楷体',size:10.5,line:{mode:'multiple',value:1},align:'left',first_line:0,bold:null,space_before:0,space_after:0}}
+    ]
+  };
+  const MARGIN_PRESETS = [
+    {id:'keep', label:'保留当前页边距', value:null},
+    {id:'standard', label:'标准：上下 2.54 / 左右 3.17 cm', value:[2.54,2.54,3.17,3.17]},
+    {id:'compact', label:'紧凑：上下 2.54 / 左右 2.54 cm', value:[2.54,2.54,2.54,2.54]},
+    {id:'wide', label:'上下 2.5 / 左右 3 cm', value:[2.5,2.5,3,3]},
+    {id:'narrow', label:'上下 2.0 / 左右 2.5 cm', value:[2,2,2.5,2.5]}
+  ];
+  const styleSignature = style => JSON.stringify({enabled:!!style.enabled,font:style.font,size:style.size,line:[style.line.mode,style.line.value],align:style.align,first_line:style.first_line,bold:style.bold,space_before:style.space_before,space_after:style.space_after});
+  const presetIdFor = (scope, style) => {
+    if (!style.enabled) return 'keep';
+    const signature = styleSignature(style);
+    const match = (PARAGRAPH_PRESETS[scope] || []).find(preset => styleSignature({...preset.style, enabled:true}) === signature);
+    return match ? match.id : 'custom';
+  };
+  const marginPresetId = page => {
+    if (['top_cm','bottom_cm','left_cm','right_cm'].every(key => page[key] === null)) return 'keep';
+    const values = ['top_cm','bottom_cm','left_cm','right_cm'].map(key => page[key]);
+    const match = MARGIN_PRESETS.find(preset => preset.value && preset.value.every((value, i) => Math.abs(value - values[i]) < 0.001));
+    return match ? match.id : 'custom';
+  };
+  function selectOptions(select, options, current) {
+    for (const [value, label] of options) select.append(new Option(label, value));
+    if (!options.some(([value]) => value === current)) select.append(new Option('当前：' + current, current));
+    select.value = current;
+  }
+  function pushHistory() {history.push({rules:JSON.parse(JSON.stringify(rules)),rows,context,conversation:conversation.slice()});}
+  function commitRuleChange(scope, focusField = 'preset') {
+    try {rules = window.LunwenRules.validate(rules);}
+    catch (error) {status(error.message, true); return;}
+    rows = window.LunwenRules.summary(rules);
+    paintRules([scope]); saveChat(); controls();
+    const select = $('ruleSummary').querySelector('select[data-scope="' + scope + '"][data-field="' + focusField + '"]');
+    if (select) select.focus();
+  }
+  function applyPreset(scope, id) {
+    if (id === 'custom') return;
+    pushHistory();
+    if (id === 'keep') rules.sections[scope].enabled = false;
+    else {
+      const preset = (PARAGRAPH_PRESETS[scope] || []).find(item => item.id === id);
+      if (!preset) return;
+      Object.assign(rules.sections[scope], preset.style, {enabled:true});
+    }
+    commitRuleChange(scope);
+  }
+  function applyPage(field, raw) {
+    if (field === 'margin' && raw === 'custom') return;
+    pushHistory();
+    if (field === 'paper') {
+      rules.page.paper = raw === 'A4' ? 'A4' : 'keep';
+    } else if (raw === 'keep') {
+      for (const key of ['top_cm','bottom_cm','left_cm','right_cm']) rules.page[key] = null;
+    } else {
+      const preset = MARGIN_PRESETS.find(item => item.id === raw);
+      if (preset && preset.value) ['top_cm','bottom_cm','left_cm','right_cm'].forEach((key, i) => rules.page[key] = preset.value[i]);
+    }
+    commitRuleChange('page', field);
+  }
+
   function friendlyError(error) {
     const raw = String((error && error.message) || error || '未知错误');
     if (/memory|allocation|out of memory|内存/i.test(raw)) return '浏览器内存不足，处理已中止。请关闭其他标签页、拆分文档或更换 Chrome / Edge 后重试。';
@@ -94,9 +180,49 @@
     $('ruleSummary').replaceChildren();
     const main = el('dl'), more = el('details'), extra = el('dl');
     more.append(el('summary', '查看摘要、题注等其余格式'));
+    const field = (label, select) => {
+      const wrap = el('label', null, 'rule-field');
+      wrap.append(el('span', label, 'rule-field-label'), select);
+      return wrap;
+    };
+    const makeSelect = (options, current, aria, scope, name, onChange) => {
+      const select = document.createElement('select');
+      select.className = 'rule-select';
+      select.dataset.scope = scope;
+      select.dataset.field = name;
+      select.setAttribute('aria-label', aria);
+      selectOptions(select, options, current);
+      select.addEventListener('change', () => onChange(select.value));
+      return select;
+    };
+    const paragraphEditor = row => {
+      const style = rules.sections[row.scope];
+      const current = presetIdFor(row.scope, style);
+      const options = (PARAGRAPH_PRESETS[row.scope] || []).map(preset => [preset.id, preset.label]);
+      if (current === 'custom') options.unshift(['custom', '当前自定义格式（保持）']);
+      options.push(['keep', '保留原格式']);
+      const select = makeSelect(options, current, row.label + '格式预设', row.scope, 'preset', value => applyPreset(row.scope, value));
+      const editor = el('div', null, 'rule-editor');
+      editor.append(field('格式预设', select), el('p', row.value, 'rule-current'));
+      return editor;
+    };
+    const pageEditor = row => {
+      const paper = makeSelect([['keep', '保留纸张尺寸'], ['A4', 'A4']], rules.page.paper, '页面纸张', 'page', 'paper', value => applyPage('paper', value));
+      const marginId = marginPresetId(rules.page);
+      const marginOptions = MARGIN_PRESETS.map(preset => [preset.id, preset.label]);
+      if (marginId === 'custom') marginOptions.unshift(['custom', '当前自定义页边距（保持）']);
+      const margin = makeSelect(marginOptions, marginId, '页面页边距', 'page', 'margin', value => applyPage('margin', value));
+      const editor = el('div', null, 'rule-editor rule-editor-page');
+      editor.append(field('纸张', paper), field('页边距', margin), el('p', row.value, 'rule-current'));
+      return editor;
+    };
     for (const row of rows) {
       const item = el('div', null, 'rule-row' + (changed.includes(row.scope) ? ' changed' : ''));
-      item.append(el('dt', row.label), el('dd', row.value));
+      const dd = el('dd');
+      if (row.scope === 'page') dd.append(pageEditor(row));
+      else if (PARAGRAPH_PRESETS[row.scope]) dd.append(paragraphEditor(row));
+      else dd.textContent = row.value;
+      item.append(el('dt', row.label), dd);
       (['body','heading1','heading2','reference','page'].includes(row.scope) ? main : extra).append(item);
     }
     more.append(extra); $('ruleSummary').append(main, more);
