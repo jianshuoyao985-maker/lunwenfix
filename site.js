@@ -9,23 +9,14 @@
   const launch = $('launchView'), app = $('appView'), start = $('startJourney');
   function showApp() {
     if (!launch || !app || !app.hidden) return;
-    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    launch.hidden = true;
     app.hidden = false;
     app.classList.add('view-entering');
-    launch.classList.add('view-leaving');
     document.body.classList.add('tool-active');
     const skip = document.querySelector('.skip-link');
     if (skip) skip.setAttribute('href', '#mainContent');
-    const finish = () => {
-      launch.hidden = true;
-      launch.classList.remove('view-leaving');
-      app.classList.remove('view-entering');
-      app.classList.add('view-active');
-      const heading = app.querySelector('.intro h1');
-      if (heading) {heading.setAttribute('tabindex', '-1'); heading.focus({preventScroll: true});}
-    };
-    if (reduce) {finish(); return;}
-    window.setTimeout(finish, 340);
+    window.scrollTo(0, 0);
+    app.querySelector('.intro h1').focus({preventScroll: true});
   }
   if (start) start.addEventListener('click', showApp);
   // 首次访问 / 刷新始终回到启动页，并回到顶部，避免浏览器恢复上次滚动位置。
@@ -48,7 +39,7 @@
   if (mobileTabs) {
     const buttons = Array.from(mobileTabs.querySelectorAll('[data-mobile-target]'));
     const mobileRun = $('mobileRun'), run = $('run');
-    const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
     const setActive = targetId => {
       buttons.forEach(button => {
         const active = button.dataset.mobileTarget === targetId;
@@ -64,7 +55,7 @@
         if (targetId === 'result' || targetId === 'previewPanel') {
           setActive('formatPanel');
           const anchor = $('run') || $('formatPanel');
-          if (anchor) anchor.scrollIntoView({behavior: reduceMotion ? 'auto' : 'smooth', block: 'center'});
+          if (anchor) anchor.scrollIntoView({behavior: reduceMotion.matches ? 'auto' : 'smooth', block: 'center'});
           const status = $('status');
           if (status) {
             status.textContent = '还没有生成结果，请先确认格式并点击“生成排版文件”。';
@@ -73,7 +64,12 @@
         }
         return;
       }
-      target.scrollIntoView({behavior: reduceMotion ? 'auto' : 'smooth', block: 'start'});
+      const heading = target.querySelector('h2');
+      if (heading) {
+        heading.tabIndex = -1;
+        heading.focus({preventScroll: true});
+      }
+      target.scrollIntoView({behavior: reduceMotion.matches ? 'auto' : 'smooth', block: 'start'});
       setActive(targetId);
     };
     buttons.forEach(button => button.addEventListener('click', () => go(button.dataset.mobileTarget)));

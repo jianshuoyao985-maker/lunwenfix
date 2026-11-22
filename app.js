@@ -142,6 +142,19 @@
     document.querySelectorAll('.chip').forEach(n => n.disabled = busy || chatting);
   }
   function status(text, error = false) {$('status').textContent = text; $('status').classList.toggle('error', error);}
+  function uploadError(text) {
+    $('uploadError').textContent = text;
+    $('dropZone').classList.toggle('is-invalid', Boolean(text));
+    if (text) $('file').setAttribute('aria-invalid', 'true');
+    else $('file').removeAttribute('aria-invalid');
+  }
+  function scrollToResult() {
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const heading = $('resultTitle');
+    heading.tabIndex = -1;
+    heading.focus({preventScroll: true});
+    $('result').scrollIntoView({behavior: reducedMotion ? 'auto' : 'smooth', block: 'start'});
+  }
   /* 进度条：percent 为空时使用不确定进度（云端排队/上传），数值模式用于本地处理。 */
   function progress(text, percent) {
     const bar = $('progress');
@@ -231,7 +244,7 @@
   async function sendMessage() {
     const text = $('message').value.trim();
     if (!text || chatting || !rules) return !text;
-    chatting = true; controls(); $('send').textContent = '正在理解…';
+    chatting = true; controls(); $('sendLabel').textContent = '正在理解…';
     const snapshot = {rules, rows, context, conversation:conversation.slice()};
     message('user', text);
     try {
@@ -250,7 +263,7 @@
       $('engine').textContent = data.engine === 'ai' ? '智能理解' : '常用格式识别';
       return true;
     } catch (error) {message('assistant', friendlyError(error) + ' 你的描述仍保留在输入框，可再次发送。'); return false;}
-    finally {chatting = false; controls(); $('send').textContent = '发送要求 ↑';}
+    finally {chatting = false; controls(); $('sendLabel').textContent = '发送要求';}
   }
   $('chatForm').addEventListener('submit', event => {event.preventDefault(); sendMessage();});
   $('message').addEventListener('keydown', event => {if ((event.ctrlKey || event.metaKey) && event.key === 'Enter' && !event.isComposing) {event.preventDefault(); sendMessage();}});
@@ -265,12 +278,22 @@
     conversation.push({role:'assistant', text:'已恢复默认格式。可以重新描述要求，或点击撤回恢复刚才的设置。'});
     paintChat(); paintRules(); controls(); saveChat();
   });
-  function rejectFile(text) {file=null;$('file').value='';$('fileName').textContent='重新选择论文';$('largeFileHint').hidden=true;status(text,true);controls();}
+  function rejectFile(text) {
+    file = null;
+    $('file').value = '';
+    $('fileName').textContent = '重新选择论文';
+    $('fileMeta').textContent = fileSupportLabel();
+    $('largeFileHint').hidden = true;
+    uploadError(text);
+    status('请重新选择论文并核对格式清单。');
+    controls();
+  }
   function chooseFile(selected, options = {}) {
     if (!selected || busy) return;
     if (!/\.docx?$/i.test(selected.name)) {rejectFile('请选择 Word 文档。'); return;}
     if (!cloudMode() && !/\.docx$/i.test(selected.name)) {rejectFile('请先用 Word / WPS 把旧版 .doc 另存为 .docx，再上传。'); return;}
     if (!selected.size || selected.size > maxMB*1024*1024) {rejectFile('请选择非空且不超过 ' + maxMB + ' MB 的文件。'); return;}
+    uploadError('');
     file = selected;
     const mb = file.size/1024/1024;
     const sizeLabel = mb >= 1 ? mb.toFixed(2) + ' MB' : Math.max(1, Math.round(file.size/1024)) + ' KB';
@@ -309,7 +332,9 @@
       const sample = await window.LunwenSample.create();
       chooseFile(sample, {sample:true});
       $('message').focus();
-    } catch (error) {status(friendlyError(error), true);}
+    } catch (error) {
+      $('uploadError').textContent = friendlyError(error);
+    }
     finally {button.disabled = false; button.textContent = label;}
   });
 
@@ -317,7 +342,7 @@
     $('previewPanel').hidden = true;
     window.LunwenDownloads.render($('result'), data);
     if (window.LunwenMobileTabs) window.LunwenMobileTabs.setActive('result');
-    $('result').scrollIntoView({behavior:'smooth',block:'start'});
+    scrollToResult();
     status('文件已生成，下载入口在下方。');
     storage.set('lunwenfix-v3-job', {token:data.token, share_url:data.share_url});
   }
@@ -356,7 +381,7 @@
   $('run').addEventListener('click', async () => {
     if (!file || busy || chatting) return;
     if ($('message').value.trim() && !(await sendMessage())) return;
-    busy = true; controls(); $('progress').hidden = false; $('run').textContent = '正在整理…';
+    busy = true; controls(); $('progress').hidden = false; $('runLabel').textContent = '正在整理…';
     // 浏览器卡顿兜底：处理超过 15 秒仍无结果时给出可操作提示（不打断处理）。
     const slowTimer = window.setTimeout(() => {
       if (!busy) return;
@@ -381,7 +406,7 @@
         // 成功完成后收起仅由“处理较慢”触发的临时提示，保留原有大文件预警。
         if ($('largeFileHint').textContent.startsWith('处理时间较长')) $('largeFileHint').hidden = true;
         status('文件已生成，预览与下载入口在下方。');
-        $('result').scrollIntoView({behavior:'smooth',block:'start'});
+        scrollToResult();
       }
     } catch (error) {
       const text = friendlyError(error);
@@ -391,7 +416,7 @@
         $('largeFileHint').textContent = '处理中断：' + text;
       }
     }
-    finally {window.clearTimeout(slowTimer); busy = false; $('progress').hidden = true; $('progress').value = 0; $('run').textContent = '生成排版文件 →'; controls();}
+    finally {window.clearTimeout(slowTimer); busy = false; $('progress').hidden = true; $('progress').value = 0; $('runLabel').textContent = '生成排版文件'; controls();}
   });
   $('useCloud').addEventListener('change', () => {
     if (file && !cloudMode() && !/\.docx$/i.test(file.name)) {
@@ -403,6 +428,9 @@
   $('keepResult').addEventListener('change', () => {
     status($('keepResult').checked ? '已选择在浏览器临时保留结果 24 小时，可随时清除。' : '结果默认不保存，关闭或刷新页面后自动销毁。');
   });
+  function fileSupportLabel() {
+    return (cloudMode() ? '支持 .docx / .doc' : '支持 .docx') + '，最大 ' + maxMB + ' MB';
+  }
   function modeUI() {
     const cloud = cloudMode();
     $('cloudOption').hidden = !backendReady;
@@ -412,7 +440,7 @@
     $('aiOption').hidden = !aiAvailable;
     $('aiPrivacy').hidden = !aiAvailable;
     $('file').accept = cloud ? '.docx,.doc,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document' : '.docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-    $('fileMeta').textContent = (cloud ? '支持 .docx / .doc' : '支持 .docx') + '，最大 ' + maxMB + ' MB';
+    if (!file) $('fileMeta').textContent = fileSupportLabel();
     $('privacyNote').textContent = cloud
       ? '已选择云端增强：生成时会先上传文档到处理服务，用于生成 PDF 与取件链接。原稿不会被覆盖。'
       : '文档全程在当前浏览器内处理，不上传服务器；默认关闭页面后文件自动销毁，工具不存储你的文档。';

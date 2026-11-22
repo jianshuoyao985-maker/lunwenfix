@@ -71,6 +71,9 @@ window.LunwenPreview = (() => {
       container.append(el('p', '本次没有可展示的段落（可能文档为空或全部内容无法解析）。可下载 Word 后检查。', 'download-detail'));
     } else {
       const scroll = el('div', null, 'preview-scroll');
+      scroll.tabIndex = 0;
+      scroll.setAttribute('role', 'region');
+      scroll.setAttribute('aria-label', '文档预览内容');
       const paper = el('div', null, 'preview-paper');
       paper.setAttribute('role', 'group');
       paper.setAttribute('aria-label', '文档预览：' + (result.original_name || '当前文档') + '，共 ' + total + ' 段');
