@@ -80,7 +80,7 @@
       const target = document.getElementById(targetId);
       if (!target) return;
       if (target.hidden) {
-        if (targetId === 'result' || targetId === 'previewPanel') {
+        if (targetId === 'result') {
           setActive('formatPanel');
           const anchor = $('run') || $('formatPanel');
           if (anchor) anchor.scrollIntoView({behavior: reduceMotion.matches ? 'auto' : 'smooth', block: 'center'});

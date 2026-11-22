@@ -39,19 +39,17 @@ window.LunwenDownloads = (() => {
     const wechat = /MicroMessenger/i.test(navigator.userAgent);
     const help = el('div', null, 'wechat-help');
     help.append(el('strong', wechat ? '当前在微信中打开' : '在手机上保存文件'));
-    help.append(el('span', wechat ? '可先点击下载 Word。若微信只显示预览或拦截下载，点击右上角“···”选择“在浏览器打开”，或复制下方取件链接到 Safari / 系统浏览器；文件仍会保留，无需重新上传。' : '若打开的是预览，使用浏览器的分享菜单选择“存储到文件”或用 Word/WPS 打开。也可以复制取件链接，换一台设备下载。'));
+    help.append(el('span', wechat ? '可先点击下载 Word。若微信只显示预览或拦截下载，点击右上角“···”选择“在浏览器打开”，或复制下方取件链接到 Safari / 系统浏览器；文件仍会保留，无需重新上传。' : '若浏览器只显示文件内容，使用浏览器的分享菜单选择“存储到文件”或用 Word/WPS 打开。也可以复制取件链接，换一台设备下载。'));
     container.append(help);
     const actions = el('div', null, 'download-actions');
-    function link(label, address, cls, preview) {
+    function link(label, address, cls) {
       const a = el('a', label, 'button ' + (cls || ''));
       a.href = url(address);
-      if (preview) { a.target = '_blank'; a.rel = 'noopener noreferrer'; }
       actions.append(a); return a;
     }
     link('下载 Word 文档 ↓', result.docx_url);
     if (result.pdf_url) {
       link('下载 PDF ↓', result.pdf_url, 'secondary');
-      link('预览 PDF · ' + result.pdf_pages + ' 页', result.preview_url, 'outline', true);
     }
     link('下载压缩包 ↓', result.zip_url, 'outline');
     link('处理说明', result.report_url, 'outline');
@@ -111,7 +109,7 @@ window.LunwenDownloads = (() => {
     container.append(help);
     const actions=el('div',null,'download-actions'),feedback=el('p','','download-feedback');feedback.setAttribute('role','status');
     const a=el('a','下载 Word 文档 ↓','button');a.href=blobUrl(result.blob);a.download=result.name;
-    a.addEventListener('click',()=>{feedback.textContent='已请求浏览器保存。若出现文档预览，请通过分享菜单存储到文件，或用 Word / WPS 打开。';});actions.append(a);
+    a.addEventListener('click',()=>{feedback.textContent='已请求浏览器保存。若浏览器只显示文件内容，请通过分享菜单存储到文件，或用 Word / WPS 打开。';});actions.append(a);
     const shareFile=new File([result.blob],result.name,{type:result.blob.type});
     let canShare=false;try{canShare=window.isSecureContext && navigator.share && navigator.canShare && navigator.canShare({files:[shareFile]});}catch(_){}
     if(canShare) {
@@ -137,7 +135,6 @@ window.LunwenDownloads = (() => {
       linkBox.append(input,copyButton);container.append(linkBox);
     }
     container.append(feedback,el('p','✓ 正文内容结构校验通过。'+Object.entries(result.report.formatted).map(([k,v])=>(window.LunwenRules.labels[k]||k)+' '+v+' 段').join(' · '),'download-detail'));
-    container.append(el('p','PDF 预览依赖后端转换能力，本地模式暂不启用；请下载 Word 后用 Word / WPS 查看最终分页效果。','small-note'));
     for(const note of result.report.notes.slice(1))container.append(el('p',note,'small-note'));
   }
   return {render,renderLocal,el,url};

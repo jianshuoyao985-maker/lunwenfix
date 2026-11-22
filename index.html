@@ -8,7 +8,7 @@
 
   <!-- SEO：标题、描述与关键词 -->
   <title>论文格式一键修复 · lunwenfix.online｜本地处理，不上传论文原文</title>
-  <meta name="description" content="lunwenfix.online 论文格式修复：上传 .docx，用一句话描述字体、字号、行距、缩进等要求，在浏览器本地完成排版并下载。默认不上传论文原文，AI 模式仅发送格式规则。附格式预览、参考文献 GB/T 7714 悬挂缩进与能力边界说明。">
+  <meta name="description" content="lunwenfix.online 论文格式修复：上传 .docx，用一句话描述字体、字号、行距、缩进等要求，在浏览器本地完成排版并下载。默认不上传论文原文，AI 模式仅发送格式规则。支持参考文献 GB/T 7714 悬挂缩进，并附工具能力边界说明。">
   <meta name="keywords" content="论文格式,毕业论文排版,Word格式修复,参考文献格式,GB/T 7714,论文格式一键修复,docx排版">
   <meta name="author" content="lunwenfix.online">
   <link rel="canonical" href="https://lunwenfix.online/">
@@ -46,7 +46,6 @@
   <script src="./rules.js" defer></script>
   <script src="./formatter.js" defer></script>
   <script src="./sample-doc.js" defer></script>
-  <script src="./preview.js" defer></script>
   <script src="./local-files.js" defer></script>
   <script src="./downloads.js" defer></script>
   <script src="./site.js?v=viewport-dock" defer></script>
@@ -115,7 +114,7 @@
       <ol class="workflow" aria-label="排版流程">
         <li><span class="workflow-icon"><svg class="icon" aria-hidden="true"><use href="#icon-upload"/></svg></span><div><strong>选择 Word 文档</strong><p>也可用内置示例体验</p></div></li>
         <li><span class="workflow-icon"><svg class="icon" aria-hidden="true"><use href="#icon-message"/></svg></span><div><strong>描述排版要求</strong><p>粘贴学校规范或选择预设</p></div></li>
-        <li><span class="workflow-icon"><svg class="icon" aria-hidden="true"><use href="#icon-download"/></svg></span><div><strong>预览与下载</strong><p>生成新文件，保留 Word 原稿</p></div></li>
+        <li><span class="workflow-icon"><svg class="icon" aria-hidden="true"><use href="#icon-download"/></svg></span><div><strong>生成与下载</strong><p>生成新文件，保留 Word 原稿</p></div></li>
       </ol>
     </main>
   </div>
@@ -196,7 +195,7 @@
             <label id="keepResultOption" class="check-label keep-result"><input id="keepResult" type="checkbox">在本浏览器临时保留结果 24 小时（默认不保存）</label>
             <label id="cloudOption" class="check-label" hidden><input id="useCloud" type="checkbox">使用云端增强处理（会上传文档，可生成 PDF 与取件链接）</label>
             <p id="cloudPrivacy" class="small-note" hidden>云端增强仅在主动勾选后启用并上传文档；不勾选时文档全程在本机处理，不会被上传。</p>
-            <label id="pdfOption" class="check-label" hidden><input id="makePdf" type="checkbox">同时生成 PDF 预览</label>
+            <label id="pdfOption" class="check-label" hidden><input id="makePdf" type="checkbox">同时生成 PDF 文件</label>
             <button id="run" class="button primary-action" disabled><span id="runLabel">生成排版文件</span><svg class="icon" aria-hidden="true"><use href="#icon-arrow"/></svg></button>
             <progress id="progress" hidden max="100" value="0" aria-label="文件处理进度"></progress>
             <p id="status" class="action-status" role="status">请选择论文并核对格式清单。</p>
@@ -205,8 +204,6 @@
       </div>
 
       <section id="result" class="panel result-panel" hidden aria-labelledby="resultTitle"></section>
-      <!-- 文档样式预览窗口（P1-8），仅本地处理完成后展示 -->
-      <section id="previewPanel" class="panel preview-panel" hidden aria-labelledby="previewTitle"></section>
     </main>
   </div>
 

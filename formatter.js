@@ -140,36 +140,6 @@ window.LunwenFormatter = (() => {
     return end>0?end:0;
   }
   const memoryError = error => error && (error instanceof RangeError || /memory|allocation|out of memory|内存/i.test(String(error.message||error)));
-  const PREVIEW_LIMIT = 300;
-  /* 读取段落原有直接格式，供“保留原格式”段落做真实预览；缺失时回退到常见正文格式。 */
-  function originalStyle(p) {
-    const ppr=direct(p,'pPr'),run=all(p,'r').find(r=>ancestor(r,'p')===p),rpr=direct(run,'rPr')||direct(ppr,'rPr');
-    const fonts=direct(rpr,'rFonts'),sz=direct(rpr,'sz'),boldNode=direct(rpr,'b');
-    const size=(Number(attr(sz,'val'))||24)/2,spacing=direct(ppr,'spacing'),ind=direct(ppr,'ind');
-    const lineValue=Number(attr(spacing,'line'))||360,lineRule=attr(spacing,'lineRule')||'auto';
-    const line=lineRule==='auto'
-      ?{mode:'multiple',value:Math.round(lineValue/240*100)/100||1.5}
-      :{mode:lineRule==='atLeast'?'atLeast':'exact',value:Math.round(lineValue/20*10)/10};
-    const firstChars=Number(attr(ind,'firstLineChars')),firstTwips=Number(attr(ind,'firstLine'))||0;
-    const hangChars=Number(attr(ind,'hangingChars')),hangTwips=Number(attr(ind,'hanging'))||0;
-    const first=firstChars>0?firstChars/100:firstTwips/(size*20);
-    const hanging=hangChars>0?hangChars/100:hangTwips/(size*20);
-    return {font:attr(fonts,'eastAsia')||'宋体',latin_font:attr(fonts,'ascii')||'Times New Roman',size,
-      align:attr(direct(ppr,'jc'),'val')||'both',bold:boldNode?(attr(boldNode,'val')==='0'?false:true):null,line,
-      first_line:Math.max(0,Math.round(first*10)/10),hanging:Math.max(0,Math.round(hanging*10)/10),
-      space_before:(Number(attr(spacing,'before'))||0)/20,space_after:(Number(attr(spacing,'after'))||0)/20,enabled:true};
-  }
-  function previewStyleFor(p,styles) {
-    const sid=attr(direct(direct(p,'pPr'),'pStyle'),'val'),name=(styles.get(sid)||{}).name||'';
-    if(/^(Title|Subtitle|标题|副标题)$/i.test(name))return {font:'黑体',latin_font:'Times New Roman',size:22,align:'center',bold:true,line:{mode:'multiple',value:1.5},first_line:0,hanging:0,space_before:12,space_after:12,enabled:true};
-    const heading=name.match(/(?:heading|标题)\s*([123])/i);
-    if(heading){const level=Number(heading[1]);return {font:'黑体',latin_font:'Times New Roman',size:[16,14,12][level-1]||12,align:level===1?'center':'left',bold:true,line:{mode:'multiple',value:1.5},first_line:0,hanging:0,space_before:level===1?12:6,space_after:6,enabled:true};}
-    return originalStyle(p);
-  }
-  function cleanPreviewStyle(style) {
-    if(!style)return null;
-    return {font:style.font,latin_font:style.latin_font,size:style.size,align:style.align,bold:style.bold,line:{...style.line},first_line:style.first_line,hanging:style.hanging||0,space_before:style.space_before,space_after:style.space_after,enabled:style.enabled!==false};
-  }
   async function format(file,inputRules,onProgress=()=>{}) {
     const rules=window.LunwenRules.validate(inputRules);
     if(!/\.docx$/i.test(file.name))throw new Error('本机处理支持 .docx。请先在 Word / WPS 中将旧版 .doc 另存为 .docx，再上传。');
@@ -188,14 +158,7 @@ window.LunwenFormatter = (() => {
     if(root.namespaceURI!==W||root.localName!=='document')throw new Error('暂不支持 Strict OOXML，请在 Word 中另存为普通 .docx。');
     const body=direct(root,'body');if(!body)throw new Error('文档缺少正文。');
     const before=fingerprint(root),styles=stylesIndex(zip.file('word/styles.xml')?await zip.file('word/styles.xml').async('string'):null);
-    const formatted={},preserved={},count=(obj,key)=>obj[key]=(obj[key]||0)+1,preview=[];
-    let previewTruncated=false;
-    const labels=window.LunwenRules.labels;
-    const pushPreview=item=>{
-      if(preview.length>=PREVIEW_LIMIT){previewTruncated=true;return;}
-      const text=item.text||'';
-      preview.push({...item,text:text.length>500?text.slice(0,500)+'…':text,style:cleanPreviewStyle(item.style)});
-    };
+    const formatted={},preserved={},count=(obj,key)=>obj[key]=(obj[key]||0)+1;
     const paragraphs=all(body,'p');
     const textOf=p=>all(p,'t').filter(t=>ancestor(t,'p')===p).map(t=>t.textContent).join('').trim();
     const plain=paragraphs.map(textOf),coverEnd=coverBoundary(plain);
@@ -212,45 +175,34 @@ window.LunwenFormatter = (() => {
       const pageBreak=all(p,'br').some(br=>attr(br,'type')==='page');
       const objectParagraph=isField||['drawing','pict','object','ins','del'].some(k=>all(p,k).length)||all(p,'oMath',M).length||all(p,'oMathPara',M).length||ancestor(p,'txbxContent');
       if(!text){
-        if(objectParagraph){
-          count(preserved,'图片、公式或域段落');
-          pushPreview({kind:'object',label:'图片 / 公式 / 域',text:'',style:originalStyle(p),preserved:true,placeholder:'图片 / 公式 / 域（保留原样）'});
-        }else if(pageBreak){
-          pushPreview({kind:'pagebreak',label:'分页符',text:'',style:null,preserved:true,pageBreak:true});
-        }else count(preserved,'空段或纯图片段落');
+        if(objectParagraph) count(preserved,'图片、公式或域段落');
+        else if(!pageBreak) count(preserved,'空段或纯图片段落');
         continue;
       }
       if(i<coverEnd){
         count(preserved,'封面或前置信息');
-        pushPreview({kind:'cover',label:'封面 / 前置信息',text,style:previewStyleFor(p,styles),preserved:true});
         continue;
       }
       if(objectParagraph){
         count(preserved,'域、修订、公式或图形段落');
-        pushPreview({kind:'preserved',label:'域 / 公式 / 图形（保留）',text,style:previewStyleFor(p,styles),preserved:true});
         continue;
       }
       const info=styleInfo(p,styles);let kind;
       if(ancestor(p,'tc'))kind='table';else [kind,region]=classify(text,info,region);
       if(kind==='protected'){
         count(preserved,'目录或封面标题');
-        pushPreview({kind:'protected',label:'目录 / 封面标题（保留）',text,style:previewStyleFor(p,styles),preserved:true});
         continue;
       }
       if(kind==='body'&&info.numbered){
         count(preserved,'自动编号列表');
-        pushPreview({kind,label:(labels[kind]||kind)+'（保留）',text,style:originalStyle(p),preserved:true});
         continue;
       }
       const style=rules.sections[kind];
       if(!style.enabled){
         count(preserved,'保留原格式');
-        pushPreview({kind,label:(labels[kind]||kind)+'（保留原格式）',text,style:originalStyle(p),preserved:true});
         continue;
       }
       formatParagraph(p,style,kind.startsWith('heading'),kind);count(formatted,kind);
-      pushPreview({kind,label:labels[kind]||kind,text,style:{...style,hanging:kind==='reference'?2:0},preserved:false});
-      if(pageBreak)pushPreview({kind:'pagebreak',label:'分页符',text:'',style:null,preserved:true,pageBreak:true});
     }
     for(const sect of all(root,'sectPr')) {
       if(['top','bottom','left','right'].some(k=>rules.page[k+'_cm']!==null)) {
@@ -273,7 +225,7 @@ window.LunwenFormatter = (() => {
       throw new Error('生成 Word 文件失败，请重试或更换浏览器。');
     }
     onProgress('处理完成。',100);
-    return {blob,name:file.name.replace(/\.docx$/i,'')+'_格式整理.docx',original_name:file.name,created_at:Date.now(),expires_at:Date.now()+86400000,preview,preview_total:paragraphs.length,preview_truncated:previewTruncated,report:{content_unchanged:true,formatted,preserved,rules,notes:['正文内容结构校验通过；除 document.xml 外其他文件部件保留。','封面、目录、页眉页脚等前置部件已尽量保留原样，请在 Word 中更新目录页码。','参考文献按 GB/T 7714 设置 2 字符悬挂缩进；请核对学校是否有额外要求。','请检查封面、未使用标题样式的章节及复杂排版。']}};
+    return {blob,name:file.name.replace(/\.docx$/i,'')+'_格式整理.docx',original_name:file.name,created_at:Date.now(),expires_at:Date.now()+86400000,report:{content_unchanged:true,formatted,preserved,rules,notes:['正文内容结构校验通过；除 document.xml 外其他文件部件保留。','封面、目录、页眉页脚等前置部件已尽量保留原样，请在 Word 中更新目录页码。','参考文献按 GB/T 7714 设置 2 字符悬挂缩进；请核对学校是否有额外要求。','请检查封面、未使用标题样式的章节及复杂排版。']}};
   }
   return {format,MIME};
 })();

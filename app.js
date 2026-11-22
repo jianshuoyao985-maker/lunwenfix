@@ -313,7 +313,7 @@
     } else {
       hint.hidden = true;
     }
-    status(options.sample ? '示例文档已加载。可以点击快捷话术或输入排版要求，再生成并预览。' : '已选择论文。可继续描述要求，或按当前格式生成。');
+    status(options.sample ? '示例文档已加载。可以点击快捷话术或输入排版要求，再生成并下载。' : '已选择论文。可继续描述要求，或按当前格式生成。');
     controls();
   }
   $('file').addEventListener('change', () => chooseFile($('file').files[0]));
@@ -339,7 +339,6 @@
   });
 
   function showResult(data) {
-    $('previewPanel').hidden = true;
     window.LunwenDownloads.render($('result'), data);
     if (window.LunwenMobileTabs) window.LunwenMobileTabs.setActive('result');
     scrollToResult();
@@ -370,7 +369,6 @@
     $('resume').append(link);
   }
   async function cloudGenerate() {
-    $('previewPanel').hidden = true;
     progress('正在上传论文，请保持网络连接…', null);
     const form = new FormData(); form.append('file', file); form.append('rules', JSON.stringify(rules)); form.append('make_pdf', $('makePdf').checked ? '1' : '0');
     const data = await jsonFetch('/api/jobs', {method:'POST',body:form}, 180000);
@@ -400,12 +398,10 @@
           try {await window.LunwenLocalFiles.clear();} catch (_) {}
         }
         window.LunwenDownloads.renderLocal($('result'), result, {persisted, saveFailed, rules});
-        if (window.LunwenPreview) window.LunwenPreview.render($('previewPanel'), result);
-        $('previewPanel').hidden = false;
         if (window.LunwenMobileTabs) window.LunwenMobileTabs.setActive('result');
         // 成功完成后收起仅由“处理较慢”触发的临时提示，保留原有大文件预警。
         if ($('largeFileHint').textContent.startsWith('处理时间较长')) $('largeFileHint').hidden = true;
-        status('文件已生成，预览与下载入口在下方。');
+        status('文件已生成，下载入口在下方。');
         scrollToResult();
       }
     } catch (error) {
@@ -487,8 +483,6 @@
       if (result) {
         $('keepResult').checked = true;
         window.LunwenDownloads.renderLocal($('result'), result, {persisted:true, rules});
-        if (window.LunwenPreview) window.LunwenPreview.render($('previewPanel'), result);
-        $('previewPanel').hidden = false;
         status('已恢复本浏览器中上次生成的文件。');
       }
     } catch (_) {}
