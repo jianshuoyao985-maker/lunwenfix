@@ -47,9 +47,9 @@
   <script src="./formatter.js" defer></script>
   <script src="./sample-doc.js" defer></script>
   <script src="./local-files.js" defer></script>
-  <script src="./downloads.js?v=compliance-checklist" defer></script>
+  <script src="./downloads.js?v=cache-retention" defer></script>
   <script src="./site.js?v=compliance-checklist" defer></script>
-  <script src="./app.js" defer></script>
+  <script src="./app.js?v=cache-retention" defer></script>
 </head>
 <body>
   <svg class="icon-definitions" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -200,7 +200,7 @@
           <div id="ruleSummary" class="rule-summary"><p class="muted">格式清单加载中…</p></div>
           <p class="small-note">使用保守识别：含公式、图片或复杂域的段落会尽量保留原格式，处理后请检查封面与目录。</p>
           <div class="generate-box">
-            <label id="keepResultOption" class="check-label keep-result"><input id="keepResult" type="checkbox">在本浏览器临时保留结果 24 小时（默认不保存）</label>
+            <label id="keepResultOption" class="check-label keep-result"><input id="keepResult" type="checkbox">在本浏览器保存结果，24 小时内可恢复（默认不保存）</label>
             <label id="cloudOption" class="check-label" hidden><input id="useCloud" type="checkbox">使用云端增强处理（会上传文档，可生成 PDF 与取件链接）</label>
             <p id="cloudPrivacy" class="small-note" hidden>云端增强仅在主动勾选后启用并上传文档；不勾选时文档全程在本机处理，不会被上传。</p>
             <label id="pdfOption" class="check-label" hidden><input id="makePdf" type="checkbox">同时生成 PDF 文件</label>

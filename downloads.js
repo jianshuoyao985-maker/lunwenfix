@@ -173,7 +173,7 @@ window.LunwenDownloads = (() => {
     const head=el('div',null,'result-head'),title=el('div'),h=el('h2','论文，整理好了。');h.id='resultTitle';
     title.append(h,el('p',result.original_name));head.append(el('span','✓','success-icon'),title);container.append(head);
     container.append(el('p','生成于 '+new Date(result.created_at).toLocaleString('zh-CN',{hour12:false})+'。修改格式要求后，请重新生成文件。','small-note'));
-    container.append(el('p',persisted?'结果已临时保存在本浏览器中（最多 24 小时），刷新页面可恢复，也可点击“清除本机结果”删除。':saveFailed?'未能保存结果缓存（浏览器本地存储不可用），请在关闭此页前下载。':'结果默认不保存，仅存在于当前页面；关闭或刷新页面后自动销毁，请在关闭前下载。','download-detail'));
+    container.append(el('p',persisted?'结果已保存至本浏览器，自生成起 24 小时内可恢复。过期缓存会在下次打开网页时清理。也可点击“清除本机结果”立即删除。':saveFailed?'未能保存结果缓存（浏览器本地存储不可用），请在关闭此页前下载。':'结果默认不保存，仅存在于当前页面；关闭或刷新页面后自动销毁，请在关闭前下载。','download-detail'));
     const help=el('div',null,'wechat-help');
     help.append(el('strong',/MicroMessenger/i.test(navigator.userAgent)?'当前在微信中打开':'在手机上保存文件'));
     help.append(el('span','点击下载 Word，或使用可用的系统保存 / 分享入口。如果当前浏览器拦截下载，可复制下方“网址与格式”到系统浏览器，重新选择论文并生成。网址只携带格式设置，不包含文件；换浏览器后本机文件不会自动转移。'));

@@ -422,7 +422,9 @@
     status(cloudMode() ? '已选择云端增强：生成时会先上传文档。' : '已切换回本机处理：文档不会上传。');
   });
   $('keepResult').addEventListener('change', () => {
-    status($('keepResult').checked ? '已选择在浏览器临时保留结果 24 小时，可随时清除。' : '结果默认不保存，关闭或刷新页面后自动销毁。');
+    status($('keepResult').checked
+      ? '生成结果后 24 小时内可恢复，也可随时手动清除。过期缓存会在下次打开网页时清理。'
+      : '下次生成的结果仅在当前页面内可用，关闭或刷新页面后不再保留。');
   });
   function fileSupportLabel() {
     return (cloudMode() ? '支持 .docx / .doc' : '支持 .docx') + '，最大 ' + maxMB + ' MB';
@@ -439,7 +441,7 @@
     if (!file) $('fileMeta').textContent = fileSupportLabel();
     $('privacyNote').textContent = cloud
       ? '已选择云端增强：生成时会先上传文档到处理服务，用于生成 PDF 与取件链接。原稿不会被覆盖。'
-      : '文档全程在当前浏览器内处理，不上传服务器；默认关闭页面后文件自动销毁，工具不存储你的文档。';
+      : '原文件全程在当前浏览器内处理，不上传服务器。生成结果默认不保存。';
     $('footerMode').textContent = cloud ? '云端增强 · 上传后可生成 PDF 与取件链接' : (backendReady ? '本机处理 · 可选 AI 仅发送格式规则' : '本机处理 · Word 下载与手机保存');
     $('wechatStart').hidden = !/MicroMessenger/i.test(navigator.userAgent);
     $('wechatStart').textContent = cloud

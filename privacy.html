@@ -6,14 +6,14 @@
   <meta name="theme-color" content="#f6f5ef">
   <meta name="referrer" content="no-referrer">
   <title>隐私政策 · lunwenfix.online 论文格式修复</title>
-  <meta name="description" content="lunwenfix.online 隐私政策：本地模式文件全程在浏览器内运算、不上传服务器；AI 模式仅发送排版需求与格式规则文本，默认不传输论文正文原文；关闭页面后文件自动销毁，工具不存储用户文档。">
+  <meta name="description" content="lunwenfix.online 隐私政策。本地模式在浏览器内处理文档，不上传服务器。AI 模式仅发送排版需求和格式规则。生成结果默认不保存。">
   <link rel="canonical" href="https://lunwenfix.online/privacy.html">
   <meta name="robots" content="index,follow">
   <link rel="sitemap" type="application/xml" title="Sitemap" href="./sitemap.xml">
   <meta property="og:type" content="article">
   <meta property="og:site_name" content="论文 Fix · lunwenfix.online">
   <meta property="og:title" content="隐私政策 · lunwenfix.online">
-  <meta property="og:description" content="本地模式不上传论文；AI 模式仅发送格式要求与规则清单；关闭页面后文件自动销毁。">
+  <meta property="og:description" content="本地模式不上传论文。AI 模式仅发送格式要求与规则清单。生成结果默认不保存。">
   <meta property="og:url" content="https://lunwenfix.online/privacy.html">
   <meta property="og:image" content="https://lunwenfix.online/assets/og-cover.png">
   <meta name="twitter:card" content="summary_large_image">
@@ -55,15 +55,15 @@
           <li>前端代码不包含任何 AI API Key；具体 AI 服务由部署方配置并受其隐私政策约束。</li>
         </ul>
 
-        <h2>3. 文件生命周期：关闭页面后自动销毁，工具不存储用户文档</h2>
+        <h2>3. 本地模式下的文件生命周期</h2>
         <ul>
           <li><strong>上传的原文件</strong>仅存在于当前页面的浏览器内存中；关闭或刷新页面后即被释放，本工具不会把原文件写入本地存储或服务器。</li>
           <li><strong>生成的排版结果</strong>默认同样只在当前页面内存在；关闭或刷新页面后自动销毁。</li>
-          <li>本工具不建立论文数据库，不保留用户文档副本，也不提供服务器端文件归档。</li>
+          <li>本地模式下，原文件与生成结果都不会保存在服务器端。</li>
         </ul>
 
         <h2>4. 可选的“临时保留结果”</h2>
-        <p>生成前，你可以主动勾选“在本浏览器临时保留结果 24 小时”。勾选后，<strong>仅生成的排版结果</strong>（不含你上传的原文件）会保存在当前浏览器的 IndexedDB 中，以便刷新页面后恢复；24 小时后自动过期，你也可以在结果区点击“清除本机结果”立即删除。该数据不会上传服务器。默认不勾选，即不做任何持久化保存。</p>
+        <p>生成前，你可以主动勾选“在本浏览器保存结果”。勾选后，<strong>仅生成的排版结果</strong>（不含你上传的原文件）会保存在当前浏览器的 IndexedDB 中，自生成起 24 小时内可恢复。到期后无法恢复，缓存会在下次打开排版网页时清理。你也可以在结果区点击“清除本机结果”立即删除。该数据不会上传服务器。默认不勾选，浏览器不持久化保存生成结果。</p>
 
         <h2>5. 云端增强处理（如部署方启用）</h2>
         <p>如站点部署了可选的云端处理服务，你可以在生成前主动勾选“使用云端增强处理”。只有在此情况下，文档才会被上传至该处理服务，用于生成 Word / PDF 与取件链接。取件文件按部署方配置的期限（通常不超过 24 小时）自动过期。当前默认配置<strong>未启用云端增强</strong>；如后续启用，我们会在页面显著位置更新说明。</p>
@@ -72,7 +72,8 @@
         <p>本工具当前不提供在线反馈表单，也不会通过网页收集你的联系信息。如对本政策、数据处理方式或工具有疑问，可发送邮件至 <a href="mailto:1821123540@qq.com">1821123540@qq.com</a>。邮件内容仅用于回复你的问题。</p>
 
         <h2>7. Cookie、统计与第三方资源</h2>
-        <p>本工具不使用广告 Cookie，不接入第三方访问统计或用户画像服务。页面所需脚本、样式与图标均由本站提供；不依赖外部字体或 CDN。浏览器本地存储仅用于你主动选择的“临时保留结果”及必要的会话状态，可随时通过浏览器设置清除。</p>
+        <p>本站使用 Cloudflare Web Analytics 统计页面访问情况和加载性能。访问网页时，浏览器可能加载 Cloudflare 的统计脚本，并向 Cloudflare 发送访问与性能指标。根据 Cloudflare 的说明，该统计脚本不使用 Cookie 或浏览器本地存储。<a href="https://developers.cloudflare.com/speed/observatory/rum-beacon/">查看 Cloudflare 的数据收集说明</a>。</p>
+        <p>本站不使用广告 Cookie。论文文件与格式要求按前述方式处理。浏览器本地存储用于你主动选择保存的排版结果和必要的会话状态，可随时通过浏览器设置清除。</p>
 
         <h2>8. 数据安全</h2>
         <p>本地处理减少了数据传输环节，但任何浏览器环境都无法保证绝对安全。请使用受信任的设备与浏览器，及时安装系统更新；处理含个人信息或未公开研究成果的论文时，避免在公共电脑上操作。</p>
