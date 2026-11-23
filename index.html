@@ -40,15 +40,15 @@
   <link rel="apple-touch-icon" href="./apple-touch-icon.png">
   <link rel="manifest" href="./manifest.webmanifest">
 
-  <link rel="stylesheet" href="./styles.css?v=viewport-dock">
+  <link rel="stylesheet" href="./styles.css?v=compliance-checklist">
   <script src="./config.js" defer></script>
   <script src="./jszip.min.js" defer></script>
   <script src="./rules.js" defer></script>
   <script src="./formatter.js" defer></script>
   <script src="./sample-doc.js" defer></script>
   <script src="./local-files.js" defer></script>
-  <script src="./downloads.js" defer></script>
-  <script src="./site.js?v=viewport-dock" defer></script>
+  <script src="./downloads.js?v=compliance-checklist" defer></script>
+  <script src="./site.js?v=compliance-checklist" defer></script>
   <script src="./app.js" defer></script>
 </head>
 <body>
@@ -63,6 +63,14 @@
     <symbol id="icon-download" viewBox="0 0 24 24"><path d="M12 3v13m-5-5 5 5 5-5M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></symbol>
   </svg>
   <a class="skip-link" href="#launchMain">跳到主要内容</a>
+
+  <aside id="complianceBanner" class="compliance-banner" aria-label="学术使用声明">
+    <div class="compliance-inner">
+      <p id="complianceMessage">本工具仅调整文档格式排版，不修改任何论文内容，不提供代写、降重等学术不端相关服务。</p>
+      <p id="complianceCompact" hidden>学术使用声明</p>
+      <button id="complianceToggle" class="compliance-toggle" type="button" aria-expanded="true" aria-controls="complianceMessage" hidden>收起</button>
+    </div>
+  </aside>
 
   <header class="topbar">
     <a class="brand" href="./" aria-label="论文 Fix 首页">

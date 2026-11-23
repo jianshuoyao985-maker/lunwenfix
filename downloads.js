@@ -14,6 +14,77 @@ window.LunwenDownloads = (() => {
     if (!['http:', 'https:'].includes(resolved.protocol)) throw new Error('下载地址无效');
     return resolved.href;
   }
+  function configuredFormats(config) {
+    const engine = window.LunwenRules;
+    if (!config || !engine) return null;
+    let rules;
+    try { rules = engine.validate(config); }
+    catch (_) { return null; }
+
+    const rows = engine.summary(rules);
+    const body = rows.find(row => row.scope === 'body');
+    const formats = rules.sections.body.enabled
+      ? [[body.label + '字体、字号、行距与段落首行缩进', body.value]]
+      : [];
+    const margins = [['top_cm', '上'], ['bottom_cm', '下'], ['left_cm', '左'], ['right_cm', '右']]
+      .filter(([key]) => rules.page[key] !== null)
+      .map(([key, label]) => label + ' ' + rules.page[key] + ' cm');
+    if (margins.length) formats.push(['页面页边距', margins.join(' · ')]);
+    if (rules.page.paper === 'A4') formats.push(['纸张尺寸', 'A4']);
+    for (const {scope, label, value} of rows) {
+      if (scope !== 'body' && rules.sections[scope]?.enabled) {
+        formats.push([scope === 'reference' ? label + '排版' : label + '格式', value]);
+      }
+    }
+    return formats;
+  }
+  function checklistGroup(title, tone, iconPath, items) {
+    const group = el('section', null, 'checklist-group checklist-' + tone);
+    group.append(el('h3', title));
+    const list = el('ul', null, 'checklist-items');
+    for (const [label, value] of items) {
+      const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      icon.setAttribute('class', 'icon checklist-icon');
+      icon.setAttribute('viewBox', '0 0 24 24');
+      icon.setAttribute('aria-hidden', 'true');
+      const path = document.createElementNS(icon.namespaceURI, 'path');
+      path.setAttribute('d', iconPath);
+      icon.append(path);
+      const item = el('li'), text = el('div');
+      text.append(el(value ? 'strong' : 'span', label));
+      if (value) text.append(el('span', value, 'checklist-value'));
+      item.append(icon, text);
+      list.append(item);
+    }
+    group.append(list);
+    return group;
+  }
+  function formatChecklist(report) {
+    const details = el('details', null, 'format-checklist');
+    details.open = true;
+    const heading = el('summary');
+    const hint = el('span', null, 'checklist-toggle');
+    hint.setAttribute('aria-hidden', 'true');
+    hint.append(el('span', '收起', 'checklist-when-open'), el('span', '展开', 'checklist-when-closed'));
+    heading.append(el('span', '格式改动清单'), hint);
+
+    const formats = configuredFormats(report?.rules);
+    const adjusted = formats?.length ? formats : [[formats
+      ? '本次未启用任何格式调整项。'
+      : '该结果未附带可用的格式配置，请下载后核对。']];
+    const groups = el('div', null, 'checklist-groups');
+    groups.append(
+      checklistGroup('已调整格式', 'adjusted', 'm5 12 4 4L19 6', adjusted),
+      checklistGroup('保留未处理', 'preserved', 'M12 4 2.5 20h19L12 4Zm0 6v4m0 3h.01', [
+        ['公式与域代码'], ['图片与内嵌表格'], ['页眉页脚内容'], ['封面页原有内容']
+      ]),
+      checklistGroup('建议手动核对', 'review', 'm14 4 6 6-3 1-2 4-2 2-6-6 2-2 4-2 1-3ZM10 14l-6 6', [
+        ['自动目录'], ['分节符与页码'], ['复杂表格内部格式'], ['学校特殊格式要求']
+      ])
+    );
+    details.append(heading, groups, el('p', '本清单为格式处理范围说明，最终效果请以实际文档为准。', 'checklist-note'));
+    return details;
+  }
   async function copy(text, input, feedback, success='已复制取件链接。在其他浏览器粘贴打开，即可继续下载。') {
     try {
       if (!navigator.clipboard || !window.isSecureContext) throw new Error('clipboard');
@@ -40,7 +111,7 @@ window.LunwenDownloads = (() => {
     const help = el('div', null, 'wechat-help');
     help.append(el('strong', wechat ? '当前在微信中打开' : '在手机上保存文件'));
     help.append(el('span', wechat ? '可先点击下载 Word。若微信只显示预览或拦截下载，点击右上角“···”选择“在浏览器打开”，或复制下方取件链接到 Safari / 系统浏览器；文件仍会保留，无需重新上传。' : '若浏览器只显示文件内容，使用浏览器的分享菜单选择“存储到文件”或用 Word/WPS 打开。也可以复制取件链接，换一台设备下载。'));
-    container.append(help);
+    container.append(help, formatChecklist(result.report));
     const actions = el('div', null, 'download-actions');
     function link(label, address, cls) {
       const a = el('a', label, 'button ' + (cls || ''));
@@ -106,7 +177,7 @@ window.LunwenDownloads = (() => {
     const help=el('div',null,'wechat-help');
     help.append(el('strong',/MicroMessenger/i.test(navigator.userAgent)?'当前在微信中打开':'在手机上保存文件'));
     help.append(el('span','点击下载 Word，或使用可用的系统保存 / 分享入口。如果当前浏览器拦截下载，可复制下方“网址与格式”到系统浏览器，重新选择论文并生成。网址只携带格式设置，不包含文件；换浏览器后本机文件不会自动转移。'));
-    container.append(help);
+    container.append(help, formatChecklist(result.report));
     const actions=el('div',null,'download-actions'),feedback=el('p','','download-feedback');feedback.setAttribute('role','status');
     const a=el('a','下载 Word 文档 ↓','button');a.href=blobUrl(result.blob);a.download=result.name;
     a.addEventListener('click',()=>{feedback.textContent='已请求浏览器保存。若浏览器只显示文件内容，请通过分享菜单存储到文件，或用 Word / WPS 打开。';});actions.append(a);

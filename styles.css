@@ -29,6 +29,7 @@
 }
 
 * { box-sizing: border-box; }
+html { scroll-padding-top: var(--compliance-height, 0px); }
 body { margin: 0; font-size: 16px; line-height: 1.6; }
 button, input, textarea, select { font: inherit; }
 button, summary, select { cursor: pointer; }
@@ -73,6 +74,49 @@ a { color: var(--green); text-underline-offset: .22em; }
 }
 
 .skip-link:focus { transform: none; }
+
+.compliance-banner {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  padding-top: env(safe-area-inset-top, 0px);
+  border-bottom: 1px solid #d0dee7;
+  background: #eaf1f6;
+  color: #293f52;
+}
+.compliance-inner {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr) 72px;
+  align-items: center;
+  gap: 8px;
+  width: min(calc(100% - 2 * var(--gutter)), var(--width));
+  margin-inline: auto;
+  padding-block: 9px;
+}
+.compliance-inner p {
+  grid-column: 2;
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  font-synthesis: weight;
+  text-align: center;
+  text-wrap: balance;
+}
+.compliance-toggle {
+  justify-self: end;
+  min-width: 48px;
+  min-height: 44px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font-size: 14px;
+  font-weight: 650;
+}
+.compliance-toggle:hover { background: #dce8f1; }
+.compliance-banner.is-collapsed .compliance-inner { padding-block: 0; }
+.compliance-banner.is-collapsed p { font-size: 13px; }
 
 .topbar, .launch-main, .workspace, .site-footer {
   width: min(calc(100% - 2 * var(--gutter)), var(--width));
@@ -645,6 +689,61 @@ progress { width: 100%; height: 8px; margin-top: 10px; accent-color: var(--green
 .result-head h2 { margin: 0; font-size: 23px; }
 .result-head p { margin: 2px 0 0; color: var(--muted); font-size: 14px; overflow-wrap: anywhere; }
 .success-icon { font-size: 23px; }
+.format-checklist {
+  margin-top: 16px;
+  border: 1px solid #d9dfe2;
+  border-radius: 12px;
+  background: var(--paper);
+}
+.format-checklist summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 10px 15px;
+  border-radius: 11px;
+  list-style: none;
+  font-size: 17px;
+  font-weight: 700;
+  font-synthesis: weight;
+}
+.format-checklist summary::-webkit-details-marker { display: none; }
+.format-checklist summary:hover { background: var(--wash); }
+.checklist-toggle { color: var(--green); font-size: 14px; font-weight: 650; }
+.format-checklist[open] .checklist-when-closed,
+.format-checklist:not([open]) .checklist-when-open { display: none; }
+.checklist-groups {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr);
+  grid-template-rows: auto 1fr;
+  align-items: start;
+  gap: 10px;
+  padding: 0 14px;
+}
+.checklist-group {
+  padding: 11px 12px;
+  border-radius: 8px;
+  background: #f4f6f6;
+}
+.checklist-adjusted { grid-row: span 2; }
+.checklist-group h3 { margin: 0 0 6px; font-size: 15px; font-synthesis: weight; }
+.checklist-items {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+.checklist-items li { display: flex; align-items: flex-start; gap: 6px; }
+.checklist-icon { width: 16px; height: 16px; margin-top: 3px; }
+.checklist-adjusted .checklist-icon { color: var(--green); }
+.checklist-preserved .checklist-icon { color: var(--gold); }
+.checklist-review .checklist-icon { color: #3d617d; }
+.checklist-value { display: block; color: var(--muted); font-size: 13px; }
+.checklist-note { margin: 10px 15px 13px; color: var(--muted); font-size: 13px; }
 .download-actions, .download-link-box { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 15px; }
 .download-link-box input { flex: 1 1 260px; max-width: 100%; }
 .download-detail, .download-feedback, .busy-view { color: var(--muted); font-size: 14px; overflow-wrap: anywhere; }
@@ -704,6 +803,10 @@ progress { width: 100%; height: 8px; margin-top: 10px; accent-color: var(--green
 }
 
 @media (max-width: 720px) {
+  .compliance-inner { grid-template-columns: minmax(0, 1fr) auto; }
+  .compliance-inner p { grid-column: 1; font-size: 14px; }
+  .checklist-groups { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto; }
+  .checklist-adjusted { grid-row: auto; }
   .topbar { min-height: 62px; }
   .brand { gap: 6px; font-size: 17px; }
   .brand-icon { width: 32px; height: 32px; }

@@ -5,6 +5,28 @@
 (() => {
   const $ = id => document.getElementById(id);
 
+  const compliance = $('complianceBanner');
+  if (compliance) {
+    const message = $('complianceMessage'), compact = $('complianceCompact'), toggle = $('complianceToggle');
+    const updateScrollPadding = () => {
+      const height = Math.ceil(compliance.getBoundingClientRect().height);
+      document.documentElement.style.setProperty('--compliance-height', height + 'px');
+    };
+    toggle.hidden = false;
+    toggle.addEventListener('click', () => {
+      const collapsed = !message.hidden;
+      message.hidden = collapsed;
+      compact.hidden = !collapsed;
+      compliance.classList.toggle('is-collapsed', collapsed);
+      toggle.setAttribute('aria-expanded', String(!collapsed));
+      toggle.textContent = collapsed ? '展开' : '收起';
+      updateScrollPadding();
+    });
+    updateScrollPadding();
+    if (window.ResizeObserver) new ResizeObserver(updateScrollPadding).observe(compliance);
+    else window.addEventListener('resize', updateScrollPadding);
+  }
+
   /* ---------- 启动开始界面 → 工具主界面（单页双视图，无路由） ---------- */
   const launch = $('launchView'), app = $('appView'), start = $('startJourney');
   const mobileTabs = $('mobileTabs');
